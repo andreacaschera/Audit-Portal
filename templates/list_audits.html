@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+      <h1 class="h4 mb-0">Elenco audit</h1>
+      <a href="{{ url_for('new_audit') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nuovo audit</a>
+    </div>
+
+    <form method="get" class="row g-3 mb-3">
+      <div class="col-md-6">
+        <input type="search" class="form-control" name="q" placeholder="Cerca per titolo, codice o cliente…" value="{{ q }}">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-outline-secondary w-100" type="submit"><i class="bi bi-search"></i> Cerca</button>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Codice</th>
+            <th>Titolo</th>
+            <th>Cliente</th>
+            <th>Data</th>
+            <th>Stato</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in audits %}
+          <tr>
+            <td class="fw-semibold">{{ a.codice }}</td>
+            <td>{{ a.titolo }}</td>
+            <td>{{ a.cliente or "—" }}</td>
+            <td>{{ a.data_audit.strftime("%d/%m/%Y") }}</td>
+            <td><span class="badge bg-secondary">{{ a.stato }}</span></td>
+            <td class="text-end"><div class="btn-group"><a href="{{ url_for('audit_detail', audit_id=a.id) }}" class="btn btn-outline-primary btn-sm">Apri</a><form method="post" action="{{ url_for('delete_audit', audit_id=a.id) }}" onsubmit="return confirm('Confermi eliminazione dell\'audit {{ a.codice }}? Operazione irreversibile.');"><button class="btn btn-outline-danger btn-sm">Elimina</button></form></div></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-secondary">Nessun audit presente.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block content %}
+  <style>
+    /* Textarea Note auto-espandibile con scroll oltre una certa altezza */
+    .note-field{
+      overflow-x: hidden;   /* niente scroll orizzontale */
+      overflow-y: hidden;   /* diventa auto via JS quando supera il cap */
+      resize: none;         /* blocca il drag manuale */
+      min-height: 2.25rem;  /* altezza minima gradevole */
+      line-height: 1.4;     /* leggibilità */
+      max-height: 14rem;    /* cap oltre il quale appare lo scroll */
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Evita che la colonna 'Voce' schiacci le altre */
+    .voce-col { white-space: normal; word-break: break-word; overflow-wrap: break-word; word-wrap: break-word; hyphens: auto; }
+
+    /* La colonna Note prende tutto lo spazio utile e resta leggibile */
+    th.voce-col, td.voce-col { width: 45%; min-width: 24ch; }
+    th.note-col, td.note-col { min-width: 28ch; width: 55%; }
+    @media (min-width: 1400px){ th.note-col, td.note-col { min-width: 36ch; } }
+
+    /* Barra azioni nota (bottone NC allineato a destra sotto la textarea) */
+    .note-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .25rem; }
+
+    /* La tabella rispetta le larghezze dichiarate anche in export */
+    .table-fixed { table-layout: fixed; }
+    table.table-fixed { width: 100%; }
+    .table-fixed th, .table-fixed td { overflow: hidden; text-overflow: ellipsis; }
+  </style>
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+      <div>
+        <h1 class="h5 mb-1">Check list — Audit {{ a.codice }}</h1>
+        <div class="text-secondary small">{{ a.titolo }} • {{ a.cliente or "—" }} • {{ a.sede or "—" }} • {{ a.data_audit.strftime("%d/%m/%Y") }}</div>
+      </div>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{{ url_for('audit_detail', audit_id=a.id) }}"><i class="bi bi-arrow-left"></i> Torna all'audit</a>
+        <a class="btn btn-primary" href="{{ url_for('export_checklist', audit_id=a.id) }}"><i class="bi bi-filetype-pdf"></i> Esporta check list</a>
+      </div>
+    </div>
+
+    
+    <form method="post" enctype="multipart/form-data" class="row g-2 align-items-end mb-3">
+      <input type="hidden" name="action" value="import">
+      <div class="col-md-9">
+        <label class="form-label">Seleziona Check list (Word .docx)</label>
+        <input type="file" class="form-control" name="docx" accept=".docx">
+        <div class="form-text">Supporto: Tabella (Voce, Esito, Note) oppure elenco puntato/numerato (una voce per paragrafo).</div>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-outline-secondary w-100"><i class="bi bi-upload"></i> Importa da Word</button>
+      </div>
+    </form>
+    
+    <form method="post" class="row g-2 align-items-end mb-3">
+      <input type="hidden" name="action" value="add">
+      <div class="col-md-9">
+        <label class="form-label">Nuova voce di check list</label>
+        <input type="text" class="form-control" name="descrizione" placeholder="Inserisci cosa verificare…">
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-outline-primary w-100"><i class="bi bi-plus-lg"></i> Aggiungi</button>
+      </div>
+    </form>
+
+    <form method="post" id="frmChecklist">
+      <input type="hidden" name="action" value="save">
+      <div class="table-responsive">
+        <table class="table align-middle table-fixed">
+          <colgroup>
+            <col style="width: 40px;">      <!-- # -->
+            <col style="width: 45%;">       <!-- Voce -->
+            <col style="width: 200px;">     <!-- Esito -->
+            <col style="width: 55%;">       <!-- Note -->
+          </colgroup>
+          <thead class="table-light">
+            <tr>
+              <th style="width:40px;">#</th>
+              <th class="voce-col">Voce</th>
+              <th style="width:200px;">Esito</th>
+              <th class="note-col">Note</th>
+              
+            </tr>
+          </thead>
+          <tbody>
+            {% for it in items %}
+              {% set is_nc = (it.esito == 'Non conforme') %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td class="voce-col">{{ it.descrizione }}</td>
+                <td>
+                  <select class="form-select esito" name="esito_{{ it.id }}">
+                    <option value="Conforme" {% if it.esito=='Conforme' %}selected{% endif %}>Conforme</option>
+                    <option value="Non conforme" {% if it.esito=='Non conforme' %}selected{% endif %}>Non conforme</option>
+                    <option value="Non applicabile" {% if it.esito=='Non applicabile' %}selected{% endif %}>Non applicabile</option>
+                  </select>
+                </td>
+                <td class="note-col">
+                  <!-- Campo Note esteso fino al bordo pagina (all'interno del container) -->
+                  <textarea
+                    class="form-control note-field"
+                    name="note_{{ it.id }}"
+                    rows="1"
+                    placeholder="Note (opzionale)"
+                  >{{ it.note or '' }}</textarea>
+                  <div class="note-actions">
+                    <a href="{{ url_for('new_nc', audit_id=a.id, prefill=it.descrizione, return=url_for('audit_checklist', audit_id=a.id)) }}" class="btn btn-outline-danger btn-sm btn-nc" {% if not is_nc %}style="display:none"{% endif %}>
+                      <i class="bi bi-exclamation-octagon"></i> Scrivi non conformità
+                    </a>
+                  </div>
+                </td>
+                
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="text-center text-secondary">Nessuna voce in check list. Aggiungi la prima qui sopra.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-primary"><i class="bi bi-save"></i> Salva</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Auto-grow per le Note
+    function autoResize(el){
+      // Cresce fino al max-height, poi mostra scrollbar verticale
+      const styles = window.getComputedStyle(el);
+      const maxH = parseFloat(styles.maxHeight); // in px
+      el.style.height = 'auto';
+      const needed = el.scrollHeight;
+      if (!isNaN(maxH) && needed > maxH) {
+        el.style.height = maxH + 'px';
+        el.style.overflowY = 'auto';
+      } else {
+        el.style.height = needed + 'px';
+        el.style.overflowY = 'hidden';
+      }
+    }
+    function initNoteAutogrow(){
+      document.querySelectorAll('textarea.note-field').forEach(function(ta){
+        autoResize(ta);                       // set iniziale (anche se già popolata)
+        ta.addEventListener('input', function(){ autoResize(ta); });
+        ta.addEventListener('focus', function(){ autoResize(ta); });
+      });
+    }
+
+    // Toggle del bottone "Scrivi non conformità" al cambio esito
+    function initEsitoButtons(){
+      document.querySelectorAll('.esito').forEach(function(sel){
+        sel.addEventListener('change', function(){
+          const tr = sel.closest('tr');
+          const btn = tr.querySelector('.btn-nc');
+          if(sel.value === 'Non conforme'){ btn.style.display = ''; }
+          else { btn.style.display = 'none'; }
+        });
+      });
+    }
+
+    function initChecklistPage(){
+      initNoteAutogrow();
+      initEsitoButtons();
+    }
+
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', initChecklistPage);
+    } else {
+      initChecklistPage();
+    }
+
+    // Se usi componenti nascosti (tab/collapse/modal), puoi ricalcolare così:
+    // document.addEventListener('shown.bs.tab', initNoteAutogrow);
+    // document.addEventListener('shown.bs.collapse', initNoteAutogrow);
+    // document.addEventListener('shown.bs.modal', initNoteAutogrow);
+  </script>
+{% endblock %}

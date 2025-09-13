@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <h1 class="h4 mb-3">Seleziona audit</h1>
+    <form method="post" class="row g-3">
+      {{ form.hidden_tag() }}
+      <div class="col-12 col-lg-6">
+        {{ form.audit_id.label(class="form-label") }}
+        {{ form.audit_id(class="form-select") }}
+      </div>
+      <div class="col-12">
+        {{ form.submit(class="btn btn-primary") }}
+      </div>
+    </form>
+  </div>
+{% endblock %}

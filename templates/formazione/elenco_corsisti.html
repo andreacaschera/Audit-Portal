@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Elenco Corsisti{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="mb-0">Elenco Corsisti</h1>
+    <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary">Torna a Formazione</a>
+  </div>
+
+  {% if enrollments|length == 0 %}
+    <div class="alert alert-info">Nessun corsista registrato al momento.</div>
+  {% else %}
+    <div class="table-responsive shadow-sm rounded-3">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Corsista</th>
+            <th>Email</th>
+            <th>Corso</th>
+            <th>Esame finale</th>
+            <th class="text-end">Azioni</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in enrollments %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ e.candidate.first_name }} {{ e.candidate.last_name }}</td>
+              <td>{{ e.candidate.email }}</td>
+              <td>{{ e.course.title if e.course else "-" }}</td>
+              <td>
+                {% if e.exam_passed %}
+                  <span class="badge bg-success">Completato</span>
+                {% else %}
+                  <span class="badge bg-secondary">Non fatto</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <form method="post" action="{{ url_for('training.delete_enrollment', enrollment_id=e.id) }}" onsubmit="return confirm('Eliminare questo corsista dal corso?');" class="d-inline">
+                  {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Elimina</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <h1 class="h4 mb-3">Nuova non conformità</h1>
+    <form method="post" class="row g-3">
+      {% if return_url %}<input type="hidden" name="return_url" value="{{ return_url }}">{% endif %}
+      {{ form.hidden_tag() }}
+      <div class="col-md-2">
+        {{ form.codice.label(class="form-label") }}
+        {{ form.codice(class="form-control") }}
+      </div>
+      <div class="col-md-10">
+        {{ form.descrizione.label(class="form-label") }}
+        {{ form.descrizione(class="form-control", rows=4) }}
+      </div>
+      <div class="col-md-3">
+        {{ form.gravita.label(class="form-label") }}
+        {{ form.gravita(class="form-select") }}
+      </div>
+      <div class="col-md-3">
+        {{ form.categoria.label(class="form-label") }}
+        {{ form.categoria(class="form-control") }}
+      </div>
+      <div class="col-md-3">
+        {{ form.rilevata_da.label(class="form-label") }}
+        {{ form.rilevata_da(class="form-control") }}
+      </div>
+      <div class="col-md-3">
+        {{ form.data_apertura.label(class="form-label") }}
+        {{ form.data_apertura(class="form-control") }}
+      </div>
+      <div class="col-md-3">
+        {{ form.stato.label(class="form-label") }}
+        {{ form.stato(class="form-select") }}
+      </div>
+      <div class="col-12">
+        {% if return_url %}<button class="btn btn-primary me-2">Salva e torna alla check list</button>{% endif %}{{ form.submit(class="btn btn-danger") }}
+      </div>
+    </form>
+  </div>
+{% endblock %}

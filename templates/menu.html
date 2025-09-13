@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row g-4">
+    <div class="col-12">
+      <div class="p-4 bg-white rounded-4 shadow-sm border">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div>
+            <h1 class="h3 mb-1">Menù di selezione</h1>
+            <p class="text-secondary mb-0">Scegli da dove iniziare: tutto è pronto per lavorare in modo veloce e ordinato.</p>
+          </div>
+          <img src="{{ url_for('static', filename='hero.svg') }}" alt="" height="64" class="opacity-75">
+        </div>
+      </div>
+    </div>
+
+    {% if current_user.is_supervisor() or current_user.is_admin() %}
+      <div class="col-md-6 col-xl-4">
+        <a href="{{ url_for('select_audit') }}" class="card lift h-100 text-decoration-none">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between">
+              <h2 class="h5 mb-0">1. Seleziona audit</h2>
+              <i class="bi bi-check2-square fs-4"></i>
+            </div>
+            <p class="text-secondary mt-2 mb-0">Apri un audit esistente e continua le attività.</p>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-md-6 col-xl-4">
+        <a href="{{ url_for('new_audit') }}" class="card lift h-100 text-decoration-none">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between">
+              <h2 class="h5 mb-0">2. Inizia nuovo audit</h2>
+              <i class="bi bi-file-earmark-plus fs-4"></i>
+            </div>
+            <p class="text-secondary mt-2 mb-0">Crea un nuovo audit con i campi standard e personalizzati.</p>
+          </div>
+        </a>
+      </div>
+    {% endif %}
+
+    <div class="col-md-6 col-xl-4">
+      <a href="{{ url_for('list_audits') }}" class="card lift h-100 text-decoration-none">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between">
+            <h2 class="h5 mb-0">3. Elenco audit</h2>
+            <i class="bi bi-list-task fs-4"></i>
+          </div>
+          <p class="text-secondary mt-2 mb-0">Consulta e filtra tutti gli audit registrati.</p>
+        </div>
+      </a>
+    </div>
+
+    {% if current_user.is_supervisor() or current_user.is_admin() %}
+      <div class="col-md-6 col-xl-4">
+        <a href="{{ url_for('list_ncs') }}" class="card lift h-100 text-decoration-none">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between">
+              <h2 class="h5 mb-0">4. Elenco non conformità</h2>
+              <i class="bi bi-exclamation-octagon fs-4"></i>
+            </div>
+            <p class="text-secondary mt-2 mb-0">Vedi tutte le NC e lo stato di avanzamento.</p>
+          </div>
+        </a>
+      </div>
+    {% endif %}
+
+    <div class="col-md-6 col-xl-4">
+      <a href="{{ url_for('actions_plan') }}" class="card lift h-100 text-decoration-none">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between">
+            <h2 class="h5 mb-0">5. Piano delle azioni correttive</h2>
+            <i class="bi bi-clipboard-check fs-4"></i>
+          </div>
+          <p class="text-secondary mt-2 mb-0">Gestisci e monitora le azioni correttive collegate.</p>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+      <a href="{{ url_for('richiedi_manutenzione') }}" class="card lift h-100 text-decoration-none">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between">
+            <h2 class="h5 mb-0">6. Richiedi manutenzione</h2>
+            <i class="bi bi-tools fs-4"></i>
+          </div>
+          <p class="text-secondary mt-2 mb-0">Invia una richiesta di intervento elettrico, meccanico o servizi.</p>
+        </div>
+      </a>
+    </div>
+
+    {% if current_user.is_supervisor() or current_user.is_admin() %}
+      <div class="col-md-6 col-xl-4">
+        <a href="{{ url_for('elenco_manutenzioni') }}" class="card lift h-100 text-decoration-none">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between">
+              <h2 class="h5 mb-0">7. Elenco interventi di manutenzione</h2>
+              <i class="bi bi-list-check fs-4"></i>
+            </div>
+            <p class="text-secondary mt-2 mb-0">Vedi tutte le richieste, aggiorna lo stato o elimina.</p>
+          </div>
+        </a>
+      </div>
+    {% endif %}
+  
+  <!-- Voci 8 e 9 aggiornate per coerenza grafica -->
+<div class="col-md-6 col-xl-4">
+  <a href="{{ url_for('training.index') }}" class="card lift h-100 text-decoration-none">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <h2 class="h5 mb-0">8. Formazione</h2>
+        <i class="bi bi-mortarboard fs-4"></i>
+      </div>
+      <p class="text-secondary mt-2 mb-0">Corsi, candidati, test e attestati.</p>
+    </div>
+  </a>
+</div>
+
+  <div class="col-md-6 col-xl-4">
+  <a href="{{ url_for('suppliers.index') }}" class="card lift h-100 text-decoration-none">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <h2 class="h5 mb-0">9. Qualifica Fornitori</h2>
+        <i class="bi bi-people-gear fs-4"></i>
+      </div>
+      <p class="text-secondary mt-2 mb-0">Onboarding e valutazione fornitori.</p>
+    </div>
+  </a>
+</div>
+</div>
+{% endblock %}

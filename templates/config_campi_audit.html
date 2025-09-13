@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+      <h1 class="h4 mb-0">Campi personalizzati — Audit</h1>
+    </div>
+    <form method="post" class="row g-3 mb-4">
+      <div class="col-md-3">
+        <label class="form-label">Nome campo (tecnico)</label>
+        <input type="text" name="name" class="form-control" placeholder="es. reparto">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Etichetta</label>
+        <input type="text" name="label" class="form-control" placeholder="es. Reparto auditato">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Tipo</label>
+        <select name="field_type" class="form-select">
+          <option value="text">Testo</option>
+          <option value="textarea">Area di testo</option>
+          <option value="integer">Intero</option>
+          <option value="decimal">Decimale</option>
+          <option value="date">Data</option>
+          <option value="select">Selezione</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Obbligatorio?</label>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="required" id="req">
+          <label class="form-check-label" for="req">Sì, campo obbligatorio</label>
+        </div>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Opzioni (solo per "Selezione")</label>
+        <input type="text" name="options" class="form-control" placeholder='["Opzione 1","Opzione 2"]'>
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary">Aggiungi campo</button>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th><th>Nome</th><th>Etichetta</th><th>Tipo</th><th>Obbl.</th><th>Opzioni</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in fields %}
+          <tr>
+            <td>{{ f.id }}</td>
+            <td><code>{{ f.name }}</code></td>
+            <td>{{ f.label }}</td>
+            <td>{{ f.field_type }}</td>
+            <td>{{ "Sì" if f.required else "No" }}</td>
+            <td><small>{{ f.options or "—" }}</small></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-secondary text-center">Nessun campo definito.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

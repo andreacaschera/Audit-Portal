@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Attestato pronto{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="alert alert-success">
+    <h4 class="alert-heading mb-2">Complimenti! Test superato.</h4>
+    <p>L'attestato è stato generato.</p>
+    <hr>
+    <a class="btn btn-success" href="{{ cert_url }}">Scarica attestato PDF</a>
+    <a class="btn btn-outline-secondary ms-2" href="{{ url_for('training.index') }}">Torna a Formazione</a>
+  </div>
+</div>
+{% endblock %}

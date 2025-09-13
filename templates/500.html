@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="display-6">Errore interno (500)</h1>
+  <p class="text-secondary">Qualcosa è andato storto.</p>
+  {% if error %}
+    <pre class="text-start bg-light border rounded p-3" style="white-space:pre-wrap;">{{ error }}</pre>
+  {% endif %}
+  <a class="btn btn-primary" href="{{ url_for('index') }}">Torna alla home</a>
+</div>
+{% endblock %}

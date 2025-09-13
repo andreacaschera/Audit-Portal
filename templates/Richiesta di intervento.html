@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>Richiesta di intervento</title>
+  <style>
+    body { font-family: DejaVu Sans, Arial, Helvetica, sans-serif; font-size: 12pt; }
+    .a4 { width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box; }
+    h1 { font-size: 18pt; margin-bottom: 8mm; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 6mm; }
+    th, td { border: 1px solid #333; padding: 6px; vertical-align: top; }
+    .label { width: 35mm; font-weight: bold; background: #f2f2f2; }
+    .value { }
+    .small { font-size: 10pt; color: #555; }
+  </style>
+</head>
+<body>
+  <div class="a4">
+    <h1>Richiesta di intervento</h1>
+    <table>
+      <tr><td class="label">Tipo</td><td class="value">{{ tipo_label }}</td></tr>
+      <tr><td class="label">Descrizione</td><td class="value">{{ descrizione }}</td></tr>
+      <tr><td class="label">Richiedente</td><td class="value">{{ richiedente }}</td></tr>
+      <tr><td class="label">Centro cottura/Terminale</td><td class="value">{{ centro }}</td></tr>
+      {% if fornitore %}
+      <tr><td class="label">Fornitore desiderato</td><td class="value">{{ fornitore }}</td></tr>
+      {% endif %}
+      {% if destinatario %}
+      <tr><td class="label">Destinatario desiderato</td><td class="value">{{ destinatario }}</td></tr>
+      {% endif %}
+      <tr><td class="label">Data intervento</td><td class="value">{{ data_intervento }}</td></tr>
+    </table>
+    <p class="small">Generato automaticamente dal portale in data {{ data_generazione }}.</p>
+  </div>
+</body>
+</html>

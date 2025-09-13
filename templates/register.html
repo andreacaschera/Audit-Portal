@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container" style="max-width:560px;">
+  <h1 class="h4 mb-3">Registrazione</h1>
+
+  <form method="post" novalidate>
+    <div class="mb-3">
+      <label class="form-label">Nome e cognome</label>
+      <input type="text" class="form-control" name="name" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-control" name="email" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-control" name="password" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Profilo desiderato</label>
+      <select class="form-select" name="desired_role" required>
+        <option value="junior" selected>Junior (accesso limitato)</option>
+        <option value="admin">Amministratore (richiede approvazione Supervisor)</option>
+      </select>
+      <div class="form-text">Il ruolo potrà essere cambiato dal Supervisor.</div>
+    </div>
+
+    <button class="btn btn-primary w-100">Registrati</button>
+  </form>
+
+  <div class="text-center mt-3">
+    <a href="{{ url_for('login') }}">Hai già un account? Accedi</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Nuovo Corso{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4">Registrazione nuovo corso</h1>
+  <form method="post" enctype="multipart/form-data" class="card p-3 shadow-sm">
+    {{ form.csrf_token }}
+    <div class="mb-3">
+      {{ form.title.label(class="form-label") }}
+      {{ form.title(class="form-control") }}
+    </div>
+    <div class="mb-3">
+      {{ form.teacher.label(class="form-label") }}
+      {{ form.teacher(class="form-control") }}
+    </div>
+    <div class="mb-3">
+      {{ form.validity_months.label(class="form-label") }}
+      {{ form.validity_months(class="form-control") }}
+      <div class="form-text">Inserisci i mesi di validità (opzionale).</div>
+    </div>
+    <div class="mb-3">
+      {{ form.material.label(class="form-label") }}
+      {{ form.material(class="form-control") }}
+      <div class="form-text">Carica slides (PDF/PPT) o video (MP4/WEBM).</div>
+    </div>
+    <div>
+      {{ form.submit(class="btn btn-primary") }}
+      <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary ms-2">Annulla</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

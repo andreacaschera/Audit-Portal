@@ -1,0 +1,108 @@
+
+{% extends "base.html" %}
+{% block title %}Elenco Fornitori Qualificati{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Fornitori qualificati</h1>
+    <a href="{{ url_for('suppliers.nuovo') }}" class="btn btn-primary">+ Nuovo</a>
+  </div>
+  {% if items %}
+  <div class="row g-3">
+    {% for row in items %}
+    <div class="col-md-6 col-xl-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h5 class="card-title mb-1">{{ row.fornitore.nome }}</h5>
+              <div class="text-muted small">
+                {{ row.fornitore.tipologia }}
+                {% if row.fornitore.citta %} · {{ row.fornitore.citta }}{% endif %}
+                {% if row.fornitore.indirizzo %} · {{ row.fornitore.indirizzo }}{% endif %}
+              </div>
+              {% if row.fornitore.contatto %}<div class="small">Contatto: {{ row.fornitore.contatto }}</div>{% endif %}
+            </div>
+            <form method="post" action="{{ url_for('suppliers.elimina', fid=row.fornitore.id) }}" onsubmit="return confirm('Eliminare il fornitore e le relative qualifiche?');">
+              <button type="submit" class="btn btn-outline-danger btn-sm">Elimina</button>
+            </form>
+          </div>
+          <hr>
+          <div class="d-flex align-items-center">
+            <div class="me-3">
+              <div class="fw-bold">Punteggio</div>
+              <div class="display-6">{{ row.score }}</div>
+            </div>
+            <div class="flex-grow-1">
+              <div class="gauge" data-score="{{ row.score }}" aria-label="Indicatore punteggio"></div>
+              <div class="small text-muted">0–10 rosso · 11–20 giallo · 21–30 verde</div>
+            </div>
+          </div>
+          <div class="mt-3">
+            <a href="{{ url_for('suppliers.rivaluta', fid=row.fornitore.id) }}" class="btn btn-outline-primary btn-sm">Rivaluta</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <div class="alert alert-info">Nessun fornitore qualificato al momento.</div>
+  {% endif %}
+</div>
+
+<style>
+.gauge {
+  width: 100%; max-width: 260px; aspect-ratio: 2 / 1;
+}
+</style>
+<script>
+// Simple semicircular gauge 0-30 with red(0-10), yellow(11-20), green(21-30)
+function drawGauge(el, score) {
+  const W = el.clientWidth || 260, H = W/2, CX = W/2, CY = H, R = Math.min(W, H) - 8;
+  const toRad = (deg) => deg * Math.PI/180;
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("width", W);
+  svg.setAttribute("height", H + 10);
+  // Background arcs: red, yellow, green
+  function arc(startDeg, endDeg, color) {
+    const x1 = CX + R * Math.cos(toRad(startDeg)), y1 = CY - R * Math.sin(toRad(startDeg));
+    const x2 = CX + R * Math.cos(toRad(endDeg)),   y2 = CY - R * Math.sin(toRad(endDeg));
+    const large = endDeg - startDeg > 180 ? 1 : 0;
+    const path = document.createElementNS(svgNS, "path");
+    path.setAttribute("d", `M ${x1} ${y1} A ${R} ${R} 0 ${large} 0 ${x2} ${y2}`);
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", color);
+    path.setAttribute("stroke-width", 10);
+    path.setAttribute("stroke-linecap", "round");
+    return path;
+  }
+  svg.appendChild(arc(180, 180 - 60, "#dc3545")); // red 0-10
+  svg.appendChild(arc(120, 120 - 60, "#ffc107")); // yellow 11-20
+  svg.appendChild(arc(60, 60 - 60, "#198754"));   // green 21-30
+  // Needle
+  const clamped = Math.max(0, Math.min(30, Number(score) || 0));
+  const ratio = clamped / 30; // 0..1
+  const angle = 180 - 180 * ratio; // 180 -> 0
+  const nx = CX + (R - 14) * Math.cos(toRad(angle));
+  const ny = CY - (R - 14) * Math.sin(toRad(angle));
+  const needle = document.createElementNS(svgNS, "line");
+  needle.setAttribute("x1", CX); needle.setAttribute("y1", CY);
+  needle.setAttribute("x2", nx); needle.setAttribute("y2", ny);
+  needle.setAttribute("stroke", "#212529"); needle.setAttribute("stroke-width", 3);
+  needle.setAttribute("stroke-linecap", "round");
+  const hub = document.createElementNS(svgNS, "circle");
+  hub.setAttribute("cx", CX); hub.setAttribute("cy", CY); hub.setAttribute("r", 5);
+  hub.setAttribute("fill", "#212529");
+  svg.appendChild(needle); svg.appendChild(hub);
+  el.innerHTML = ""; el.appendChild(svg);
+}
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".gauge").forEach(el => {
+    const score = parseFloat(el.getAttribute("data-score") || "0");
+    drawGauge(el, score);
+  });
+});
+</script>
+{% endblock %}

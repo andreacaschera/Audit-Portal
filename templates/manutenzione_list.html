@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0"><i class="bi bi-list-check me-2"></i>Elenco interventi di manutenzione</h1>
+    <a class="btn btn-outline-secondary" href="{{ url_for('richiedi_manutenzione') }}">
+      <i class="bi bi-plus-circle me-1"></i> Nuova richiesta
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Tipo</th>
+          <th>Descrizione</th>
+          <th>Richiedente</th>
+          <th>Centro</th>
+          <th>Fornitore/Destinatario</th>
+          <th>Data intervento</th>
+          <th class="text-nowrap">Stato</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr class="{% if r.status == 'Eseguito' %}table-success{% endif %}">
+          <td>{{ r.id }}</td>
+          <td>{{ r.tipo }}</td>
+          <td style="max-width: 360px;">{{ r.descrizione }}</td>
+          <td>{{ r.richiedente }}</td>
+          <td>{{ r.centro }}</td>
+          <td>
+            {% if r.fornitore %}{{ r.fornitore }}{% elif r.destinatario %}{{ r.destinatario }}{% else %}—{% endif %}
+          </td>
+          <td>{{ r.data_intervento or '' }}</td>
+          <td>
+            <div class="d-flex gap-2">
+              <form method="post" action="{{ url_for('update_manutenzione_status', mid=r.id) }}">
+                <input type="hidden" name="status" value="Eseguito">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" onclick="this.form.submit()" {% if r.status == 'Eseguito' %}checked{% endif %}>
+                  <label class="form-check-label small">Eseguito</label>
+                </div>
+              </form>
+              <form method="post" action="{{ url_for('update_manutenzione_status', mid=r.id) }}">
+                <input type="hidden" name="status" value="Assegnato">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" onclick="this.form.submit()" {% if r.status == 'Assegnato' %}checked{% endif %}>
+                  <label class="form-check-label small">Assegnato</label>
+                </div>
+              </form>
+              <form method="post" action="{{ url_for('update_manutenzione_status', mid=r.id) }}">
+                <input type="hidden" name="status" value="Non assegnato">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" onclick="this.form.submit()" {% if r.status == 'Non assegnato' %}checked{% endif %}>
+                  <label class="form-check-label small">Non assegnato</label>
+                </div>
+              </form>
+            </div>
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('delete_manutenzione', mid=r.id) }}" onsubmit="return confirm('Eliminare questo intervento?');">
+              <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="text-center text-secondary">Nessun intervento presente.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

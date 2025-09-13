@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+      <h1 class="h4 mb-0">Inizia nuovo audit</h1>
+      <div class="text-secondary small">Dopo il salvataggio, si aprirà automaticamente la pagina <strong>Check list</strong>.</div>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('config_campi_audit') }}"><i class="bi bi-gear"></i> Configura campi</a>
+    </div>
+    <form method="post" class="row g-3">
+      {{ form.hidden_tag() }}
+      <div class="col-md-6">
+        {{ form.titolo.label(class="form-label") }}
+        {{ form.titolo(class="form-control") }}
+      </div>
+      <div class="col-md-3">
+        {{ form.codice.label(class="form-label") }}
+        {{ form.codice(class="form-control") }}
+      </div>
+      <div class="col-md-3">
+        {{ form.data_audit.label(class="form-label") }}
+        {{ form.data_audit(class="form-control") }}
+      </div>
+
+      <div class="col-md-4">
+        {{ form.cliente.label(class="form-label") }}
+        {{ form.cliente(class="form-control") }}
+      </div>
+      <div class="col-md-4">
+        {{ form.sede.label(class="form-label") }}
+        {{ form.sede(class="form-control") }}
+      </div>
+      <div class="col-md-4">
+        {{ form.norma.label(class="form-label") }}
+        {{ form.norma(class="form-select") }}
+      </div>
+
+      <div class="col-md-3">
+        {{ form.stato.label(class="form-label") }}
+        {{ form.stato(class="form-select") }}
+      </div>
+
+      <div class="col-12"><hr></div>
+
+      {# --- dynamic custom fields --- #}
+      {% for field in form if field.name.startswith('cf_') %}
+        <div class="col-md-6">
+          {{ field.label(class="form-label") }}
+          {% if field.type == "SelectField" %}
+            {{ field(class="form-select") }}
+          {% else %}
+            {{ field(class="form-control") }}
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <div class="col-12">
+        {{ form.submit(class="btn btn-primary") }}
+      </div>
+    </form>
+  </div>
+{% endblock %}

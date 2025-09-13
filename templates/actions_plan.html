@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+      <h1 class="h4 mb-0">Piano delle azioni correttive</h1>
+      <form method="get" class="d-flex gap-2">
+        <select name="audit_id" class="form-select">
+          <option value="">Tutti gli audit</option>
+          {% for a in audits %}
+            <option value="{{ a.id }}" {% if selected_audit and selected_audit.id==a.id %}selected{% endif %}>{{ a.codice }} — {{ a.titolo }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-outline-secondary">Applica</button>
+      </form>
+    </div>
+
+    
+    {% if selected_nc %}
+      <div class="alert alert-light border rounded-3 mb-4">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+          <div>
+            <div class="fw-semibold">NC {{ selected_nc.codice }} — {{ selected_nc.gravita }}</div>
+            <div class="small text-secondary">{{ selected_nc.descrizione }}</div>
+          </div>
+          <div class="text-nowrap small"><i class="bi bi-hash"></i> Audit {{ selected_nc.audit.codice }}</div>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Azione</th>
+                <th>Responsabile</th>
+                <th>NC</th>
+                <th>Scadenza</th>
+                <th>Stato</th>
+                <th>Efficacia</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for act in actions %}
+              <tr>
+                <td>{{ act.azione|truncate(80) }}</td>
+                <td>{{ act.responsabile or "—" }}</td>
+                <td>{{ act.non_conformita.codice if act.non_conformita else "—" }}</td>
+                <td>{{ act.data_scadenza.strftime("%d/%m/%Y") if act.data_scadenza else "—" }}</td>
+                <td><span class="badge bg-secondary">{{ act.stato }}</span></td>
+                <td>{{ act.efficacia or "—" }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="6" class="text-center text-secondary">Nessuna azione presente.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="p-3 border rounded-3">
+          <h2 class="h6">Nuova azione</h2>
+          <form method="post" class="row g-2">
+            {{ form.hidden_tag() }}
+            <div class="col-12">
+              {{ form.azione.label(class="form-label") }}
+              {{ form.azione(class="form-control", rows="3") }}
+            </div>
+            <div class="col-md-6">
+              {{ form.responsabile.label(class="form-label") }}
+              {{ form.responsabile(class="form-control") }}
+            </div>
+            <div class="col-md-6">
+              {{ form.data_scadenza.label(class="form-label") }}
+              {{ form.data_scadenza(class="form-control") }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Collega a NC</label>
+              <select name="nc_id" class="form-select">
+                <option value="">—</option>
+                {% for nc in ncs %}
+                  <option value="{{ nc.id }}">{{ nc.codice }} — {{ nc.descrizione|truncate(40) }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              {{ form.stato.label(class="form-label") }}
+              {{ form.stato(class="form-select") }}
+            </div>
+            <div class="col-md-3">
+              {{ form.efficacia.label(class="form-label") }}
+              {{ form.efficacia(class="form-select") }}
+            </div>
+            <div class="col-12">
+              <button class="btn btn-primary w-100">Aggiungi</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

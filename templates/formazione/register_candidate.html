@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Registrazione Candidato{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4">Registrazione candidato</h1>
+  <form method="post" class="card p-3 shadow-sm">
+    {{ form.csrf_token }}
+    <div class="row g-3">
+      <div class="col-md-6">
+        {{ form.first_name.label(class="form-label") }}
+        {{ form.first_name(class="form-control") }}
+      </div>
+      <div class="col-md-6">
+        {{ form.last_name.label(class="form-label") }}
+        {{ form.last_name(class="form-control") }}
+      </div>
+      <div class="col-md-6">
+        {{ form.place_of_birth.label(class="form-label") }}
+        {{ form.place_of_birth(class="form-control") }}
+      </div>
+      <div class="col-md-6">
+        {{ form.date_of_birth.label(class="form-label") }}
+        {{ form.date_of_birth(class="form-control", placeholder="YYYY-MM-DD") }}
+      </div>
+      <div class="col-md-6">
+        {{ form.role.label(class="form-label") }}
+        {{ form.role(class="form-control") }}
+      </div>
+    </div>
+    <div class="mt-3">
+      {{ form.submit(class="btn btn-primary") }}
+      <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary ms-2">Annulla</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

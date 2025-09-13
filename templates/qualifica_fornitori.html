@@ -1,0 +1,19 @@
+
+{% extends "base.html" %}
+{% block title %}Qualifica Fornitori{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4">Qualifica Fornitori</h1>
+  <div class="list-group">
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="{{ url_for('suppliers.elenco') }}">
+      1) Elenco fornitori qualificati <span class="bi bi-arrow-right"></span>
+    </a>
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="{{ url_for('suppliers.nuovo') }}">
+      2) Inserisci nuovo fornitore <span class="bi bi-arrow-right"></span>
+    </a>
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="{{ url_for('suppliers.rivaluta_list') }}">
+      3) Rivaluta fornitore <span class="bi bi-arrow-right"></span>
+    </a>
+  </div>
+</div>
+{% endblock %}

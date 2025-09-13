@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+      <h1 class="h5 mb-0">Dettaglio NC — {{ nc.codice }}</h1>
+      <div class="d-flex gap-2">
+        <a class="btn btn-primary" href="{{ url_for('actions_plan', audit_id=nc.audit_id, nc_id=nc.id) }}">
+          <i class="bi bi-clipboard-check"></i> Definizioni azione correttiva
+        </a>
+        <a class="btn btn-outline-secondary" href="{{ url_for('nc_manage', nc_id=nc.id) }}">
+          <i class="bi bi-sliders"></i> Gestione NC
+        </a>
+        <form method="post" action="{{ url_for('nc_delete', nc_id=nc.id) }}" onsubmit="return confirm('Confermi l\\'eliminazione della NC?');" class="d-inline">
+          <button class="btn btn-outline-danger"><i class="bi bi-trash"></i> Elimina NC</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-4"><div class="text-secondary small">Audit</div><div class="fw-semibold">{{ nc.audit.codice }} — {{ nc.audit.titolo }}</div></div>
+      <div class="col-md-3"><div class="text-secondary small">Gravità</div><div class="fw-semibold">{{ nc.gravita }}</div></div>
+      <div class="col-md-3"><div class="text-secondary small">Stato</div><div class="fw-semibold">{{ nc.stato }}</div></div>
+      <div class="col-md-2"><div class="text-secondary small">Data</div><div class="fw-semibold">{{ nc.data_apertura.strftime("%d/%m/%Y") }}</div></div>
+      <div class="col-12"><div class="text-secondary small">Descrizione</div><div>{{ nc.descrizione }}</div></div>
+      {% if nc.categoria %}<div class="col-md-4"><div class="text-secondary small">Categoria</div><div>{{ nc.categoria }}</div></div>{% endif %}
+      {% if nc.rilevata_da %}<div class="col-md-4"><div class="text-secondary small">Rilevata da</div><div>{{ nc.rilevata_da }}</div></div>{% endif %}
+    </div>
+  </div>
+{% endblock %}

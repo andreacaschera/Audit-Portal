@@ -1,0 +1,14 @@
+
+/* stile precedente ripristinato + piccoli tocchi */
+.card.lift {
+  transition: transform .12s ease, box-shadow .12s ease;
+  border-radius: 1rem;
+  border: 1px solid rgba(0,0,0,.08);
+}
+.card.lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
+  text-decoration: none;
+}
+.navbar-brand img { display:inline-block; height:28px; }
+.opacity-75 { opacity:.75; }

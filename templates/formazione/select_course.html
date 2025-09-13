@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Seleziona Corso{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4">Seleziona corso</h1>
+  {% if courses %}
+  <form method="post" action="{{ url_for('training.enroll') }}" class="card p-3 shadow-sm">
+    <input type="hidden" name="candidate_id" value="{{ candidate_id }}">
+    <div class="mb-3">
+      <label class="form-label">Corso</label>
+      <select class="form-select" name="course_id" required>
+        {% for c in courses %}
+          <option value="{{ c.id }}">{{ c.title }} — Docente: {{ c.teacher }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <button type="submit" class="btn btn-primary">Procedi</button>
+      <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary ms-2">Annulla</a>
+    </div>
+  </form>
+  {% else %}
+    <div class="alert alert-info">Nessun corso disponibile. Crea prima un corso.</div>
+  {% endif %}
+</div>
+{% endblock %}

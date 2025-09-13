@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+      <div>
+        <h1 class="h4 mb-1">{{ a.titolo }}</h1>
+        <div class="text-secondary small">
+          <span class="me-3"><i class="bi bi-hash"></i> {{ a.codice }}</span>
+          <span class="me-3"><i class="bi bi-calendar-event"></i> {{ a.data_audit.strftime("%d/%m/%Y") }}</span>
+          {% if a.cliente %}<span class="me-3"><i class="bi bi-building"></i> {{ a.cliente }}</span>{% endif %}
+          {% if a.sede %}<span class="me-3"><i class="bi bi-geo-alt"></i> {{ a.sede }}</span>{% endif %}
+          {% if a.norma %}<span class="me-3"><i class="bi bi-journal-check"></i> {{ a.norma }}</span>{% endif %}
+          <span class="badge bg-secondary">{{ a.stato }}</span>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('audit_checklist', audit_id=a.id) }}" class="btn btn-outline-secondary"><i class="bi bi-ui-checks-grid"></i> Compila check list</a>
+        <a href="{{ url_for('new_nc', audit_id=a.id) }}" class="btn btn-outline-danger"><i class="bi bi-exclamation-octagon"></i> Nuova NC</a>
+        <a href="{{ url_for('actions_plan', audit_id=a.id) }}" class="btn btn-primary"><i class="bi bi-clipboard-check"></i> Piano azioni</a>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <h2 class="h6 mb-3">Non conformità</h2>
+        <div class="list-group">
+          {% for nc in ncs[:6] %}
+            <a href="{{ url_for('list_ncs', audit_id=a.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+              <span><strong>{{ nc.codice }}</strong> — {{ nc.descrizione|truncate(60) }}</span>
+              <span class="badge bg-{{ 'danger' if nc.gravita=='Critica' else 'warning' if nc.gravita=='Maggiore' else 'secondary' }}">{{ nc.gravita }}</span>
+            </a>
+          {% else %}
+            <div class="text-secondary small">Nessuna NC registrata.</div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <h2 class="h6 mb-3">Azioni correttive prossime</h2>
+        <div class="list-group">
+          {% for act in actions[:6] %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ act.responsabile or "—" }}</strong>: {{ act.azione|truncate(60) }}
+              </div>
+              <div class="text-nowrap small">
+                {% if act.data_scadenza %}
+                  <i class="bi bi-calendar-check"></i> {{ act.data_scadenza.strftime("%d/%m/%Y") }}
+                {% else %}
+                  <span class="text-secondary">Senza scadenza</span>
+                {% endif %}
+              </div>
+            </div>
+          {% else %}
+            <div class="text-secondary small">Nessuna azione registrata.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

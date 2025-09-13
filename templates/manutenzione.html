@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <h1 class="h3 mb-4"><i class="bi bi-tools me-2"></i>Richiedi manutenzione</h1>
+
+  <form method="post" action="{{ url_for('richiedi_manutenzione') }}" id="manutenzioneForm" class="row g-3">
+    <div class="col-12">
+      <label class="form-label">Tipo richiesta</label>
+      <select class="form-select" name="tipo" id="tipo" required>
+        <option value="" selected disabled>Seleziona...</option>
+        <option value="elettrica">1. Manutenzione elettrica</option>
+        <option value="meccanica">2. Manutenzione meccanica</option>
+        <option value="servizi">3. Servizi</option>
+      </select>
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">Descrizione intervento richiesto</label>
+      <textarea class="form-control" name="descrizione" rows="4" required placeholder="Descrivi l'intervento..."></textarea>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Richiedente</label>
+      <input type="text" class="form-control" name="richiedente" required placeholder="Nome e cognome">
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Centro cottura / Terminale di servizio</label>
+      <input type="text" class="form-control" name="centro" required placeholder="Es. Centro cottura Milano Nord">
+    </div>
+
+    <!-- Fornitore (solo per elettrica/meccanica) -->
+    <div class="col-md-6" id="fornitoreWrap" style="display:none;">
+      <label class="form-label">Fornitore desiderato</label>
+      <select class="form-select" name="fornitore" id="fornitoreSelect">
+        <option value="" selected>— Seleziona fornitore —</option>
+        {% for f in fornitori %}
+          <option value="{{ f }}">{{ f }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Destinatario (solo per servizi) -->
+    <div class="col-md-6" id="destinatarioWrap" style="display:none;">
+      <label class="form-label">Destinatario desiderato</label>
+      <input type="text" class="form-control" name="destinatario" id="destinatarioInput" placeholder="Es. Ufficio Facility, Società esterna, ...">
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Data intervento desiderato</label>
+      <input type="date" class="form-control" name="data_intervento" required>
+    </div>
+
+    <div class="col-12 d-flex gap-2 mt-2">
+      <button type="submit" name="azione" value="genera_pdf" class="btn btn-primary">
+        <i class="bi bi-filetype-pdf me-1"></i> Genera richiesta PDF
+      </button>
+      <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Annulla</a>
+    </div>
+  
+    <hr class="my-4">
+    <h2 class="h5">Inserisci nuovo fornitore</h2>
+    <div class="alert alert-secondary small">Compila per aggiungere un fornitore all'elenco. La tipologia determina dove comparirà (elettrica/meccanica/servizi).</div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Nome fornitore</label>
+        <input type="text" class="form-control" name="nuovo_nome_fornitore" placeholder="Ragione sociale">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Telefono</label>
+        <input type="text" class="form-control" name="nuovo_telefono" placeholder="+39 ...">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Persona di contatto</label>
+        <input type="text" class="form-control" name="nuovo_contatto" placeholder="Nome e cognome">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Tipologia di servizio</label>
+        <select class="form-select" name="nuova_tipologia">
+          <option value="" selected disabled>Seleziona...</option>
+          <option value="elettrica">Manutenzione elettrica</option>
+          <option value="meccanica">Manutenzione meccanica</option>
+          <option value="servizi">Servizi</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <button type="submit" name="azione" value="salva_fornitore" class="btn btn-outline-primary">
+          <i class="bi bi-person-plus me-1"></i> Salva fornitore
+        </button>
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const tipo = document.getElementById('tipo');
+  const fornitoreWrap = document.getElementById('fornitoreWrap');
+  const destinatarioWrap = document.getElementById('destinatarioWrap');
+  function toggleFields() {
+    const v = tipo.value;
+    if (v === 'elettrica' || v === 'meccanica') {
+      fornitoreWrap.style.display = '';
+      destinatarioWrap.style.display = 'none';
+      document.getElementById('destinatarioInput').value = '';
+    } else if (v === 'servizi') {
+      fornitoreWrap.style.display = 'none';
+      destinatarioWrap.style.display = '';
+      document.getElementById('fornitoreSelect').value = '';
+    } else {
+      fornitoreWrap.style.display = 'none';
+      destinatarioWrap.style.display = 'none';
+    }
+  }
+  tipo.addEventListener('change', toggleFields);
+  toggleFields();
+});
+</script>
+{% endblock %}

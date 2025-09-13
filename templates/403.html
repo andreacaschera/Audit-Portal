@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="display-6">403 — Accesso negato</h1>
+  <p class="text-secondary">Non hai i permessi per questa pagina.</p>
+  <a class="btn btn-primary" href="{{ url_for('index') }}">Torna alla home</a>
+</div>
+{% endblock %}

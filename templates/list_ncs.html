@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+      <h1 class="h4 mb-0">Elenco non conformità</h1>
+      <a href="{{ url_for('new_nc') }}" class="btn btn-danger btn-sm"><i class="bi bi-plus-lg"></i> Nuova NC</a>
+    </div>
+
+    <form method="get" class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label">Filtro per audit</label>
+        <select name="audit_id" class="form-select" onchange="this.form.submit()">
+          <option value="">Tutti</option>
+          {% for a in audits %}
+            <option value="{{ a.id }}" {% if audit_filter == a.id %}selected{% endif %}>{{ a.codice }} — {{ a.titolo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Audit</th>
+            <th>Codice</th>
+            <th>Descrizione</th>
+            <th>Gravità</th>
+            <th>Stato</th>
+            <th>Data</th><th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          {% for nc in ncs %}
+          {% set row_class = 'table-success' if nc.stato=='Chiusa' else 'table-secondary' if nc.stato=='Non applicabile' else '' %}
+          <tr class="{{ row_class }}">
+            <td class="text-nowrap">{{ nc.audit.codice }}</td>
+            <td class="fw-semibold">{{ nc.codice }}</td>
+            <td>{{ nc.descrizione|truncate(80) }}</td>
+            <td><span class="badge bg-{{ 'success' if nc.stato=='Chiusa' else 'secondary' if nc.gravita=='Minore' else 'warning' if nc.gravita=='Maggiore' else 'danger' }}">{{ nc.gravita }}</span></td>
+            <td>
+              {% if nc.stato=='Chiusa' %}
+                <span class="badge bg-success">Chiusa</span>
+              {% elif nc.stato=='Non applicabile' %}
+                <span class="badge bg-secondary">Non applicabile</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ nc.stato }}</span>
+              {% endif %}
+            </td>
+            <td>{{ nc.data_apertura.strftime("%d/%m/%Y") }}</td>
+            <td class="text-nowrap">{% if nc.stato=='Non applicabile' %}<span class="text-secondary small me-2">Non selezionabile</span>{% else %}<a href="{{ url_for('nc_detail', nc_id=nc.id) }}" class="btn btn-outline-primary btn-sm me-2">Apri</a>{% endif %}<form method="post" action="{{ url_for('nc_delete', nc_id=nc.id) }}" class="d-inline" onsubmit="return confirm('Confermi eliminazione della NC {{ nc.codice }}? Operazione irreversibile.');"><button class="btn btn-outline-danger btn-sm">Elimina</button></form></td>
+          </tr>
+          {% else %}
+
+          <tr><td colspan="6" class="text-center text-secondary">Nessuna NC trovata.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

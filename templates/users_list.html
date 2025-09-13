@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="bg-white rounded-4 shadow-sm border p-4">
+  <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+    <h1 class="h5 m-0">Elenco utenti</h1>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{{ url_for('index') }}"><i class="bi bi-house"></i> Home</a>
+      <a class="btn btn-outline-primary" href="{{ url_for('manage_users') }}"><i class="bi bi-people"></i> Gestione ruoli</a>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Ruolo</th>
+          <th class="text-end">Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ u.name }}</td>
+          <td>{{ u.email }}</td>
+          <td><span class="badge bg-secondary">{{ u.role }}</span></td>
+          <td class="text-end">
+            {% if u.role == 'supervisor' and not allow_supervisor_deletion %}
+              <span class="text-secondary">Eliminazione Supervisor non consentita</span>
+            {% else %}
+              <form method="post" action="{{ url_for('users_delete_post') }}" class="d-inline" onsubmit="return confirm('Eliminare l\'utente {{ u.email }}?');">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <button class="btn btn-sm btn-outline-danger">Elimina</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

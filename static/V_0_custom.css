@@ -1,0 +1,24 @@
+:root{
+  --radius: 1.25rem;
+}
+.card.lift{
+  transition: transform .15s ease, box-shadow .15s ease;
+  border-radius: var(--radius);
+  border: 1px solid rgba(0,0,0,.08);
+}
+.card.lift:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
+}
+.navbar-brand img{
+  filter: grayscale(1) contrast(1.2);
+}
+.form-control, .form-select, .btn{
+  border-radius: .9rem;
+}
+.table{
+  --bs-table-border-color: rgba(0,0,0,.06);
+}
+.badge{
+  border-radius: .6rem;
+}

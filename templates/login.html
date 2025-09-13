@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container" style="max-width:460px;">
+  <h1 class="h4 mb-3">Accesso</h1>
+
+  <div class="mb-3">
+    <button class="btn btn-outline-dark w-100" data-bs-toggle="modal" data-bs-target="#supervisorModal">
+      Reset credenziali Supervisor
+    </button>
+  
+  {% if current_user.is_authenticated and current_user.is_supervisor() %}
+  <form method="post" action="{{ url_for('supervisor_reset') }}" onsubmit="return confirm('Azzerare utente e password del Supervisor? Dovrai registrare un nuovo Supervisor.');">
+    <button class="btn btn-outline-danger w-100 mt-2">Reset Supervisor (solo Supervisor)</button>
+  </form>
+  {% endif %}
+
+  {% if not (current_user.is_authenticated) and false %}
+  <!-- Opzionale: se vuoi mostrare un link diretto quando nessun Supervisor esiste, abilita lato template -->
+  {% endif %}
+
+  <form method="post" novalidate class="card card-body">
+    <input type="hidden" name="mode" value="">
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-control" name="email" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-control" name="password" required>
+    </div>
+
+    <button class="btn btn-primary w-100">Accedi</button>
+  </form>
+
+  {% if session.get('allow_users_list') or (current_user.is_authenticated and current_user.is_supervisor()) %}
+    <div class="text-center mt-3">
+      <a class="btn btn-outline-primary w-100" href="{{ url_for('users_list') }}">Elenco utenti</a>
+    </div>
+  {% endif %}
+
+  <div class="text-center mt-3">
+    <a href="{{ url_for('register') }}">Non hai un account? Registrati</a>
+  </div>
+</div>
+
+<div class="modal fade" id="supervisorModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reset credenziali Supervisor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+      </div>
+      <div class="modal-body">
+        <div id="step-ask">
+          <p class="mb-3">Sei il Supervisor?</p>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary" id="btnYes">Sì</button>
+            <button class="btn btn-outline-secondary" data-bs-dismiss="modal" id="btnNo">No</button>
+          </div>
+        </div>
+        <form method="post" id="formSupervisor" action="{{ url_for('supervisor_reset') }}" style="display:none;">
+          <div class="mb-3">
+            <label class="form-label">Inserisci la tua data di nascita (formato: 07021976)</label>
+            <input type="text" class="form-control" name="dob" placeholder="07021976" required>
+            <div class="form-text">Per motivi di sicurezza, il reset del Supervisor richiede la tua data di nascita.</div>
+          </div>
+          <button class="btn btn-danger w-100">Reset credenziali Supervisor</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const ask = document.getElementById('step-ask');
+    const form = document.getElementById('formSupervisor');
+    const btnYes = document.getElementById('btnYes');
+
+    btnYes?.addEventListener('click', function(){
+      ask.style.display = 'none';
+      form.style.display = '';
+    });
+
+    if (!sessionStorage.getItem('sup_checked')) {
+      const modalEl = document.getElementById('supervisorModal');
+      if (modalEl) {
+        const myModal = new bootstrap.Modal(modalEl);
+        myModal.show();
+      }
+      sessionStorage.setItem('sup_checked', '1');
+    }
+  })();
+</script>
+{% endblock %}

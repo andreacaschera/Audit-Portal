@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Esame di Valutazione{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-3">Test di valutazione — {{ course.title }}</h1>
+  <form method="post" class="card p-3 shadow-sm">
+    {{ form.csrf_token }}
+    <ol class="mb-3">
+      {% for idx, q in enumerate(questions) %}
+        <li class="mb-2">
+          <label class="form-label">{{ q.q }}</label>
+          <div>
+            {% set field = getattr(form, 'q' ~ idx) %}
+            {% for val, label in field.choices %}
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="{{ field.name }}" id="{{ field.name }}_{{ loop.index }}" value="{{ val }}">
+                <label class="form-check-label" for="{{ field.name }}_{{ loop.index }}">{{ label }}</label>
+              </div>
+            {% endfor %}
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+    <div>
+      <button type="submit" class="btn btn-primary">Invia test</button>
+      <a href="{{ url_for('training.view_material', enrollment_id=enrollment.id) }}" class="btn btn-outline-secondary ms-2">Annulla</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

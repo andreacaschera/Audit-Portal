@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="bg-white rounded-4 shadow-sm border p-4">
+    <h1 class="h5 mb-3">Gestione NC — {{ nc.codice }}</h1>
+    <div class="row g-3 mb-4">
+      <div class="col-md-4"><div class="text-secondary small">Audit</div><div class="fw-semibold">{{ nc.audit.codice }} — {{ nc.audit.titolo }}</div></div>
+      <div class="col-md-3"><div class="text-secondary small">Gravità</div><div class="fw-semibold">{{ nc.gravita }}</div></div>
+      <div class="col-md-3"><div class="text-secondary small">Stato attuale</div><div class="fw-semibold">{{ nc.stato }}</div></div>
+      <div class="col-md-2"><div class="text-secondary small">Data</div><div class="fw-semibold">{{ nc.data_apertura.strftime("%d/%m/%Y") }}</div></div>
+      <div class="col-12"><div class="text-secondary small">Descrizione</div><div>{{ nc.descrizione }}</div></div>
+    </div>
+
+    <form method="post" class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Imposta stato</label>
+        <select class="form-select" name="stato">
+          <option value="Aperta" {% if nc.stato=='Aperta' %}selected{% endif %}>Aperta</option>
+          <option value="Risolta" {% if nc.stato=='Chiusa' %}selected{% endif %}>Risolta</option>
+          <option value="Non applicabile" {% if nc.stato=='Non applicabile' %}selected{% endif %}>Non applicabile</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Note</label>
+        <textarea name="note" class="form-control" rows="4" placeholder="Scrivi qui note di gestione...">{{ note_val }}</textarea>
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary">Salva</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('list_ncs', audit_id=nc.audit_id) }}">Torna all'elenco</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

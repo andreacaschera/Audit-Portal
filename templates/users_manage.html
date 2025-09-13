@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="bg-white rounded-4 shadow-sm border p-4">
+  <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+    <h1 class="h5 m-0">Gestione utenti (Supervisor)</h1>
+    <div>
+      <a class="btn btn-outline-secondary" href="{{ url_for('index') }}">
+        <i class="bi bi-arrow-left"></i> Torna alla home
+      </a>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Ruolo</th>
+          <th>Richiesta</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ u.name }}</td>
+          <td>{{ u.email }}</td>
+          <td><span class="badge bg-secondary">{{ u.role }}</span></td>
+          <td>
+            {% if u.requested_role %}
+              <span class="badge bg-warning text-dark">{{ u.requested_role }}</span>
+            {% else %}
+              <span class="text-secondary">—</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            {% if u.role == 'supervisor' %}
+              <span class="text-secondary">Il Supervisor non può essere modificato</span>
+            {% else %}
+              <form method="post" class="d-inline-flex gap-2 align-items-center">
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <select name="role" class="form-select form-select-sm" style="width:160px;">
+                  <option value="junior" {% if u.role=='junior' %}selected{% endif %}>Junior (limitato)</option>
+                  <option value="admin" {% if u.role=='admin' %}selected{% endif %}>Amministratore</option>
+                </select>
+                <button class="btn btn-sm btn-primary">Applica</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
