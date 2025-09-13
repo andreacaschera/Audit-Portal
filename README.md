@@ -33,3 +33,4 @@ Apri il browser su http://127.0.0.1:5000
 - Cambia logo, nome azienda e nome app in `config.py`.
 - Stili aggiuntivi in `static/custom.css`.
 ```
+# Audit-Portal
