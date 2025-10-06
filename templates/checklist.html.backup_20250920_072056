@@ -177,20 +177,4 @@
     // document.addEventListener('shown.bs.collapse', initNoteAutogrow);
     // document.addEventListener('shown.bs.modal', initNoteAutogrow);
   </script>
-
-  <div class="card mt-3 p-3">
-    <h5>Foto allegate</h5>
-    <form method="post" action="{{ url_for('upload_checklist_photo', item_id=item.id) }}" enctype="multipart/form-data" class="d-flex gap-2">
-      <input type="file" name="photo" accept="image/*" required class="form-control">
-      <button class="btn btn-outline-primary">Carica foto</button>
-    </form>
-    <div class="mt-2 d-flex flex-wrap gap-2">
-      {% for ph in item.photos %}
-        <a href="{{ url_for('get_photo', pid=ph.id) }}" target="_blank"><img src="{{ url_for('get_photo', pid=ph.id) }}" style="height:80px" /></a>
-      {% else %}
-        <div class="text-secondary small">Nessuna foto caricata.</div>
-      {% endfor %}
-    </div>
-  </div>
-
 {% endblock %}

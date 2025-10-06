@@ -58,20 +58,7 @@
       </button>
       <a href="#" onclick="history.back(); return false;" class="btn btn-outline-secondary">Annulla</a>
     </div>
-  
-  <div class="col-md-3 form-check">
-    <input class="form-check-input" type="checkbox" name="urgente" id="urgente">
-    <label class="form-check-label" for="urgente">Urgente</label>
-  </div>
-  <div class="col-md-6">
-    <label class="form-label">Email fornitore (se diversa da anagrafica)</label>
-    <input type="email" class="form-control" name="email_fornitore" placeholder="fornitore@example.com">
-  </div>
-  <div class="col-12 d-flex gap-2">
-    <button name="azione" value="genera_pdf" class="btn btn-primary">Genera PDF</button>
-    <button name="azione" value="genera_e_invia" class="btn btn-danger">Genera PDF e invia via email</button>
-  </div>
-</form>
+  </form>
 </div>
 
 <script>

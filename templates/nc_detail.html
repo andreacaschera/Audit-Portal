@@ -4,6 +4,10 @@
     <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
       <h1 class="h5 mb-0">Dettaglio NC — {{ nc.codice }}</h1>
       <div class="d-flex gap-2">
+        <form method="post" action="{{ url_for('upload_nc_photo', nc_id=nc.id) }}" enctype="multipart/form-data" class="d-flex gap-2">
+          <input type="file" name="photo" accept="image/*" required class="form-control">
+          <button class="btn btn-outline-primary"><i class="bi bi-upload"></i> Carica foto</button>
+        </form>
         <a class="btn btn-primary" href="{{ url_for('actions_plan', audit_id=nc.audit_id, nc_id=nc.id) }}">
           <i class="bi bi-clipboard-check"></i> Definizioni azione correttiva
         </a>
@@ -15,6 +19,17 @@
         </form>
       </div>
     </div>
+
+    {% if nc.photos %}
+    <div class="mb-3">
+      <div class="text-secondary small">Foto allegate</div>
+      <div class="d-flex flex-wrap gap-2">
+        {% for ph in nc.photos %}
+          <a href="{{ url_for('get_photo', pid=ph.id) }}" target="_blank"><img src="{{ url_for('get_photo', pid=ph.id) }}" style="height:80px" /></a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
     <div class="row g-3">
       <div class="col-md-4"><div class="text-secondary small">Audit</div><div class="fw-semibold">{{ nc.audit.codice }} — {{ nc.audit.titolo }}</div></div>
