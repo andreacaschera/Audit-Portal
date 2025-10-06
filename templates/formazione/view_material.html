@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Materiale Corso{% endblock %}
 {% block content %}
-<div class="container py-4">
+<div class="container py-4" data-start="{{ session.get('material_start_' ~ enrollment.id) }}">
   <h1 class="mb-3">Materiale: {{ course.title }}</h1>
   {% if file_url %}
     <div class="card p-3 shadow-sm mb-3">
@@ -14,9 +14,37 @@
   {% else %}
     <div class="alert alert-warning">Nessun materiale caricato per questo corso.</div>
   {% endif %}
-  <div class="d-flex gap-2">
-    <a href="{{ url_for('training.exam', enrollment_id=enrollment.id) }}" class="btn btn-success">Esegui test di valutazione</a>
+  {% if not enrollment.completed_material %}
+  <form method="post" action="{{ url_for('training.complete_material', enrollment_id=enrollment.id) }}">
+    <button class="btn btn-primary" id="completeBtn" disabled>Completa visione (attendere 120s)</button>
+  </form>
+{% endif %}
+<div class="d-flex gap-2">
+    <a {% if enrollment.completed_material %}href="{{ url_for('training.exam', enrollment_id=enrollment.id) }}" class="btn btn-success">Esegui test di valutazione</a>{% else %}<button class="btn btn-success" disabled>Completa prima il materiale</button>{% endif %}
     <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary">Torna al menu formazione</a>
   </div>
 </div>
 {% endblock %}
+<script>
+(function(){
+  var root = document.querySelector('.container.py-4');
+  var btn = document.getElementById('completeBtn');
+  if(!root || !btn) return;
+  var startIso = root.getAttribute('data-start');
+  var start = startIso ? new Date(startIso) : new Date();
+  var req = 120; // seconds required
+  function tick(){
+    var now = new Date();
+    var elapsed = Math.floor((now - start)/1000);
+    if(elapsed >= req){
+      btn.disabled = false;
+      btn.textContent = "Completa visione";
+    }else{
+      btn.disabled = true;
+      btn.textContent = "Completa visione (attendere " + (req - elapsed) + "s)";
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+</script>

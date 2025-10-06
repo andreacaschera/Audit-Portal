@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Materiale Corso{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-3">Materiale: {{ course.title }}</h1>
+  {% if file_url %}
+    <div class="card p-3 shadow-sm mb-3">
+      {% if is_video %}
+        <video src="{{ file_url }}" controls style="width:100%; max-height:60vh;"></video>
+      {% else %}
+        <a class="btn btn-outline-primary" href="{{ file_url }}" target="_blank">Apri/Scarica materiale</a>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="alert alert-warning">Nessun materiale caricato per questo corso.</div>
+  {% endif %}
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('training.exam', enrollment_id=enrollment.id) }}" class="btn btn-success">Esegui test di valutazione</a>
+    <a href="{{ url_for('training.index') }}" class="btn btn-outline-secondary">Torna al menu formazione</a>
+  </div>
+</div>
+{% endblock %}
