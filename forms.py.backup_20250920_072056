@@ -32,11 +32,7 @@ class NuovaNCForm(FlaskForm):
     codice = StringField("Codice NC", validators=[DataRequired()])
     descrizione = TextAreaField("Descrizione", validators=[DataRequired()])
     gravita = SelectField("Gravità", choices=[("Minore","Minore"),("Maggiore","Maggiore"),("Critica","Critica")])
-    categoria = SelectField("Categoria",
-                        choices=[("Audit interni", "Audit interni"),
-                                 ("Ispezioni ASL/NAS", "Ispezioni ASL/NAS"),
-                                 ("Analitiche", "Analitiche"),
-                                 ("Altro", "Altro")])
+    categoria = StringField("Categoria", validators=[Optional()])
     rilevata_da = StringField("Rilevata da", validators=[Optional()])
     data_apertura = DateField("Data apertura", default=date.today, validators=[Optional()])
     stato = SelectField("Stato", choices=[("Aperta","Aperta"),("In corso","In corso"),("Chiusa","Chiusa")])
@@ -91,7 +87,6 @@ class SupplierBaseForm(FlaskForm):
     citta = StringField("Città", validators=[Optional()])
     tipologia = StringField("Tipologia del servizio/fornitura", validators=[DataRequired()])
     contatto = StringField("Persona di contatto", validators=[Optional()])
-    email = StringField("Email", validators=[Optional()])
 
 def _mk_select(name, label, choices):
     return SelectField(label, choices=choices, validators=[DataRequired()], coerce=int, name=name)

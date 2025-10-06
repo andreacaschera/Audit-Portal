@@ -110,12 +110,6 @@ def view_material(enrollment_id):
         file_url = url_for("training.materials", filename=course.material_filename)
         mt = (course.material_mimetype or "").lower()
         is_video = any(x in mt for x in ["video", "mp4", "webm", "ogg"])
-    
-    # Avvio tracciamento tempo
-    session_key = f"material_start_{enrollment_id}"
-    if not session.get(session_key):
-        session[session_key] = datetime.utcnow().isoformat()
-
     return render_template("formazione/view_material.html", enrollment=enr, course=course, file_url=file_url, is_video=is_video)
 
 @training_bp.route("/materiali/<path:filename>")
@@ -212,26 +206,3 @@ def _generate_certificate_pdf(path, enrollment):
     except Exception:
         with open(path, "wb") as f:
             f.write(b"%PDF-1.4\n% Fallback attestato\n")
-
-
-@training_bp.route("/complete/<int:enrollment_id>", methods=["POST"])
-@login_required
-def complete_material(enrollment_id):
-    enr = Enrollment.query.get_or_404(enrollment_id)
-    start = session.pop(f"material_start_{enrollment_id}", None)
-    if start:
-        try:
-            start_dt = datetime.fromisoformat(start)
-            delta = (datetime.utcnow() - start_dt).total_seconds()
-            enr.time_spent_seconds = (enr.time_spent_seconds or 0) + int(delta)
-        except Exception:
-            pass
-    enr.completed_material = True
-    db.session.commit()
-    flash("Materiale contrassegnato come completato. Ora puoi sostenere il test.", "success")
-    return redirect(url_for("training.view_material", enrollment_id=enrollment_id))
-
-    enr = Enrollment.query.get_or_404(enrollment_id)
-    if not enr.completed_material:
-        flash("Devi completare il materiale prima di poter eseguire il test.", "warning")
-        return redirect(url_for("training.view_material", enrollment_id=enrollment_id))

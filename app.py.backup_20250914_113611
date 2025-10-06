@@ -1,80 +1,17 @@
-from datetime import date, datetime
-import os
-import smtplib
-import email.message
-import mimetypes
+from models import db, Audit, NonConformita, AzioneCorrettiva, CustomField, CustomValue, ChecklistItem, Fornitore, InterventoManutenzione, FornitoreQualifica
 
-from flask import (
-    Flask, render_template, redirect, url_for,
-    request, flash, session, send_file, abort
-)
-from werkzeug.utils import secure_filename
-from flask_login import (
-    LoginManager, UserMixin, login_user, logout_user,
-    login_required, current_user
-)
-from werkzeug.security import generate_password_hash, check_password_hash
-from functools import wraps
+from datetime import date, datetime
+from flask import Flask, render_template, redirect, url_for, request, flash, session, send_file, abort
+import os
+from config import Config
+from forms import NuovoAuditForm, SelezionaAuditForm, NuovaNCForm, NuovaAzioneForm, dynamic_fields_to_form
 from sqlalchemy import func
 
-from config import Config
-from models import (
-    db, Audit, NonConformita, AzioneCorrettiva,
-    CustomField, CustomValue, ChecklistItem,
-    Fornitore, InterventoManutenzione, FornitoreQualifica
-)
-from forms import (
-    NuovoAuditForm, SelezionaAuditForm,
-    NuovaNCForm, NuovaAzioneForm, dynamic_fields_to_form
-)
+# Auth
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
-# -------------------------------
-# Helper email (SMTP o .eml)
-# -------------------------------
-def _send_email(subject, body, to_addrs, attachments=None):
-    """Best-effort: usa SMTP se configurato, altrimenti salva un .eml in instance/."""
-    smtp_host = os.environ.get("SMTP_HOST")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER")
-    smtp_pass = os.environ.get("SMTP_PASS")
-    from_addr = os.environ.get("SMTP_FROM", smtp_user or "noreply@example.com")
-
-    msg = email.message.EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = from_addr
-    msg["To"] = ", ".join([a for a in (to_addrs or []) if a])
-    msg.set_content(body)
-
-    for path in attachments or []:
-        try:
-            ctype, _ = mimetypes.guess_type(path)
-            maintype, subtype = (ctype or "application/octet-stream").split("/", 1)
-            with open(path, "rb") as f:
-                msg.add_attachment(
-                    f.read(), maintype=maintype, subtype=subtype,
-                    filename=os.path.basename(path)
-                )
-        except Exception as e:
-            print("Attachment error:", e)
-
-    if smtp_host and smtp_user and smtp_pass:
-        with smtplib.SMTP(smtp_host, smtp_port) as s:
-            s.starttls()
-            s.login(smtp_user, smtp_pass)
-            s.send_message(msg)
-        return "sent"
-    else:
-        inst = os.path.join(os.path.dirname(__file__), "instance")
-        os.makedirs(inst, exist_ok=True)
-        eml = os.path.join(inst, f"draft_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.eml")
-        with open(eml, "wb") as f:
-            f.write(bytes(msg))
-        return eml
-
-
-# -------------------------------
-# Flask app factory
-# -------------------------------
 login_manager = LoginManager()
 login_manager.login_view = "login"  # se non autenticato -> /login
 
@@ -83,7 +20,6 @@ def create_app():
     app.config.from_object(Config)
     if not app.config.get("SECRET_KEY"):
         app.config["SECRET_KEY"] = "dev-secret-change-me"
-
     db.init_app(app)
     login_manager.init_app(app)
 
@@ -101,6 +37,7 @@ def create_app():
         role = db.Column(db.String(20), nullable=False, default="junior")  # 'supervisor' | 'admin' | 'junior'
         requested_role = db.Column(db.String(20), nullable=True)           # richiesta di promozione
 
+        # --- metodi utility ---
         def set_password(self, password: str):
             self.password_hash = generate_password_hash(password)
 
@@ -120,22 +57,24 @@ def create_app():
         except Exception:
             return None
 
+    
+
     # --- Supervisor utilities ---
     def _has_supervisor() -> bool:
         return db.session.query(User.id).filter(User.role == "supervisor").first() is not None
 
     def _supervisor_count() -> int:
-        return db.session.query(User.id).filter(User.role == "supervisor").count()
+            return db.session.query(User.id).filter(User.role == "supervisor").count()
 
-    # Bootstrap supervisor opzionale via env (non obbligatorio)
+# Bootstrap supervisor opzionale via env (non obbligatorio)
     def _bootstrap_supervisor():
-        email_env = os.environ.get("SUPERVISOR_EMAIL")
-        pwd = os.environ.get("SUPERVISOR_PASSWORD")
-        if not (email_env and pwd):
+        email = os.environ.get("SUPERVISOR_EMAIL")
+        pwd   = os.environ.get("SUPERVISOR_PASSWORD")
+        if not (email and pwd):
             return
-        email_env = email_env.lower().strip()
-        if not User.query.filter_by(email=email_env).first():
-            su = User(name="Supervisor", email=email_env, role="supervisor")
+        email = email.lower().strip()
+        if not User.query.filter_by(email=email).first():
+            su = User(name="Supervisor", email=email, role="supervisor")
             su.set_password(pwd)
             db.session.add(su)
             db.session.commit()
@@ -167,7 +106,7 @@ def create_app():
     @app.before_request
     def enforce_junior_limits():
         ep = request.endpoint or ""
-        if ep and ep.startswith("static"):
+        if ep.startswith("static"):
             return
         if not current_user.is_authenticated:
             return  # LoginManager gestirà il redirect
@@ -196,6 +135,7 @@ def create_app():
             email = (request.form.get("email") or "").lower().strip()
             password = request.form.get("password") or ""
             desired_role = request.form.get("desired_role", "junior")  # 'junior' | 'admin' | 'supervisor'
+  # 'junior' | 'admin'
 
             if not name or not email or not password:
                 flash("Compila tutti i campi.", "warning")
@@ -204,15 +144,18 @@ def create_app():
                 flash("Email già registrata.", "warning")
                 return redirect(url_for("register"))
 
-            # Decide role
+                        # Decide role: allow 'supervisor' only if none exists
             role_to_set = "junior"
+            # Se è in corso la creazione del primo Supervisor, forza il ruolo
+            if session.get('force_supervisor') and not _has_supervisor():
+                role_to_set = "supervisor"
+            if desired_role == "admin":
+                role_to_set = "junior"
+            # Se è in corso la creazione del primo Supervisor, forza il ruolo
             if session.get('force_supervisor') and not _has_supervisor():
                 role_to_set = "supervisor"
             elif desired_role == "supervisor" and not _has_supervisor():
                 role_to_set = "supervisor"
-            elif desired_role == "admin":
-                role_to_set = "junior"  # admin su approvazione
-
             u = User(name=name, email=email, role=role_to_set)
             u.set_password(password)
             if desired_role == "admin":
@@ -228,9 +171,9 @@ def create_app():
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if request.method == "POST":
-            email_in = (request.form.get("email") or "").lower().strip()
+            email = (request.form.get("email") or "").lower().strip()
             password = request.form.get("password") or ""
-            u = User.query.filter_by(email=email_in).first()
+            u = User.query.filter_by(email=email).first()
             if not u or not u.check_password(password):
                 flash("Credenziali non valide.", "danger")
                 return redirect(url_for("login"))
@@ -248,11 +191,16 @@ def create_app():
     def supervisor_reset():
         can_reset = False
         dob = (request.form.get("dob") or "").strip()
-        if dob == "07021976" or (current_user.is_authenticated and current_user.is_supervisor()):
+        # Consenti reset se: data di nascita corretta OPPURE utente loggato supervisor
+        if dob == "07021976":
             can_reset = True
+        elif current_user.is_authenticated and current_user.is_supervisor():
+            can_reset = True
+
         if not can_reset:
             abort(403)
 
+        # Elimina tutti gli attuali supervisor
         supervisors = User.query.filter_by(role="supervisor").all()
         for s in supervisors:
             db.session.delete(s)
@@ -264,7 +212,9 @@ def create_app():
         flash("Supervisor azzerato. Registra ora un nuovo Supervisor per continuare.", "success")
         return redirect(url_for("new_supervisor"))
 
-    # Pannello Supervisor per ruoli
+
+
+        # Pannello Supervisor per ruoli
     @app.route("/admin/users", methods=["GET", "POST"])
     @login_required
     @roles_required("admin")  # supervisor incluso
@@ -295,9 +245,11 @@ def create_app():
         users = User.query.order_by(User.id.asc()).all()
         return render_template("users_list.html", users=users, allow_supervisor_deletion=app.config.get("ALLOW_SUPERVISOR_DELETION", False))
 
+
     @app.post("/users/delete")
     @login_required
     def users_delete_post():
+        # Solo Supervisor può eliminare utenti
         if not current_user.is_supervisor():
             abort(403)
         user_id = request.form.get("user_id")
@@ -309,14 +261,17 @@ def create_app():
             flash("Utente non trovato.", "warning")
             return redirect(url_for("users_list"))
 
+        # Gestione policy eliminazione Supervisor
         if u.role == "supervisor":
             allow = app.config.get("ALLOW_SUPERVISOR_DELETION", False)
             if not allow:
                 flash("Eliminazione del Supervisor non consentita dalla policy.", "warning")
                 return redirect(url_for("users_list"))
+            # Non permettere di lasciare il sistema senza Supervisor
             if _supervisor_count() <= 1:
                 flash("Non puoi eliminare l'ultimo Supervisor.", "warning")
                 return redirect(url_for("users_list"))
+            # Evita di eliminare te stessa/te stesso se resti senza privilegi
             self_delete = (u.id == current_user.id)
             db.session.delete(u)
             db.session.commit()
@@ -326,10 +281,12 @@ def create_app():
                 return redirect(url_for("login"))
             return redirect(url_for("users_list"))
 
+        # Elimina utenti non-supervisor
         db.session.delete(u)
         db.session.commit()
         flash("Utente eliminato correttamente.", "success")
         return redirect(url_for("users_list"))
+
 
     @app.post("/admin/users/<int:uid>/delete")
     @login_required
@@ -399,7 +356,6 @@ def create_app():
             note = request.form.get("note","").strip()
             if nuovo_stato == "Risolta":
                 nc.stato = "Chiusa"
-                close_nc_cascade(nc)
             elif nuovo_stato == "Non applicabile":
                 nc.stato = "Non applicabile"
             else:
@@ -411,27 +367,33 @@ def create_app():
         note_val = _get_nc_note(nc.id)
         return render_template("nc_manage.html", nc=nc, note_val=note_val)
 
+    
+    
+
     @app.route("/supervisor/new", methods=["GET","POST"])
     def new_supervisor():
+        # Se esiste già un supervisor, blocca
         if _has_supervisor():
             flash("Esiste già un Supervisor. Non è possibile crearne un altro direttamente.", "warning")
             return redirect(url_for("login"))
         if request.method == "POST":
             name = (request.form.get("name") or "").strip()
-            email_in = (request.form.get("email") or "").lower().strip()
+            email = (request.form.get("email") or "").lower().strip()
             password = request.form.get("password") or ""
             confirm = request.form.get("confirm") or ""
-            if not name or not email_in or not password:
+            if not name or not email or not password:
                 flash("Compila tutti i campi.", "warning")
                 return redirect(url_for("new_supervisor"))
             if password != confirm:
                 flash("Le password non coincidono.", "warning")
                 return redirect(url_for("new_supervisor"))
-            existing = User.query.filter_by(email=email_in).first()
+            # Check email già presente
+            existing = User.query.filter_by(email=email).first()
             if existing:
                 flash("Esiste già un utente con questa email. Usa un'altra email.", "warning")
                 return redirect(url_for("new_supervisor"))
-            u = User(name=name, email=email_in, role="supervisor")
+            # Crea utente supervisor
+            u = User(name=name, email=email, role="supervisor")
             u.set_password(password)
             db.session.add(u)
             try:
@@ -501,11 +463,7 @@ def create_app():
         query = Audit.query
         if q:
             like = f"%%{q.lower()}%%"
-            query = query.filter(
-                func.lower(Audit.titolo).like(like) |
-                func.lower(Audit.codice).like(like) |
-                func.lower(Audit.cliente).like(like)
-            )
+            query = query.filter(func.lower(Audit.titolo).like(like) | func.lower(Audit.codice).like(like) | func.lower(Audit.cliente).like(like))
         audits = query.order_by(Audit.data_audit.desc()).all()
         return render_template("list_audits.html", audits=audits, q=q)
 
@@ -589,24 +547,14 @@ def create_app():
                 db.session.add(action)
                 db.session.commit()
                 flash("Azione correttiva aggiunta.", "success")
-                return redirect(url_for(
-                    "actions_plan",
-                    audit_id=(audit_id or (selected_nc.audit_id if selected_nc else None)),
-                    nc_id=(selected_nc.id if selected_nc else None)
-                ))
+                return redirect(url_for("actions_plan", audit_id=(audit_id or (selected_nc.audit_id if selected_nc else None)), nc_id=(selected_nc.id if selected_nc else None)))
         form = NuovaAzioneForm()
         actions = AzioneCorrettiva.query
         if audit_id or (selected_nc and selected_nc.audit_id):
             actions = actions.filter_by(audit_id=(audit_id or selected_nc.audit_id))
         actions = actions.order_by(AzioneCorrettiva.data_scadenza.asc().nullslast()).all()
-        ncs = NonConformita.query.filter_by(
-            audit_id=(audit_id or (selected_nc.audit_id if selected_nc else None))
-        ).all() if (audit_id or selected_nc) else []
-        return render_template(
-            "actions_plan.html",
-            audits=audits, selected_audit=selected_audit,
-            actions=actions, ncs=ncs, form=form, selected_nc=selected_nc
-        )
+        ncs = NonConformita.query.filter_by(audit_id=(audit_id or (selected_nc.audit_id if selected_nc else None))).all() if (audit_id or selected_nc) else []
+        return render_template("actions_plan.html", audits=audits, selected_audit=selected_audit, actions=actions, ncs=ncs, form=form, selected_nc=selected_nc)
 
     # --- Configurazione campi dinamici ---
     @app.route("/config/campi-audit", methods=["GET","POST"])
@@ -749,10 +697,10 @@ def create_app():
         )
 
         styles = getSampleStyleSheet()
+        # wordWrap='CJK' per capo anche su parole lunghe
         cell = ParagraphStyle('cell', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, spaceBefore=0, spaceAfter=0, wordWrap='CJK')
         head = ParagraphStyle('head', parent=styles['Heading5'], fontName='Helvetica-Bold', fontSize=10, leading=12, spaceBefore=0, spaceAfter=4)
 
-        from reportlab.platypus import Table
         story = []
         story.append(Paragraph(f"Check list — Audit {a.codice}", styles["Title"]))
         meta = f"{escape(a.titolo or '—')} • {escape(a.cliente or '—')} • {escape(a.sede or '—')} • {a.data_audit.strftime('%d/%m/%Y')}"
@@ -801,7 +749,57 @@ def create_app():
     @app.route("/manutenzione", methods=["GET", "POST"])
     @login_required
     def richiedi_manutenzione():
-        # -- salva nuovo fornitore (inline) --
+        # Creazione PDF + salvataggio richiesta
+        if request.method == "POST" and request.form.get("azione") == "genera_pdf":
+            tipo = request.form.get("tipo") or ""
+            descrizione = request.form.get("descrizione") or ""
+            richiedente = request.form.get("richiedente") or ""
+            centro = request.form.get("centro") or ""
+            data_intervento = request.form.get("data_intervento") or ""
+
+            fornitore = None
+            destinatario = None
+            tipo_label = ""
+            if tipo == "elettrica":
+                tipo_label = "Manutenzione elettrica"; fornitore = request.form.get("fornitore") or ""
+            elif tipo == "meccanica":
+                tipo_label = "Manutenzione meccanica"; fornitore = request.form.get("fornitore") or ""
+            elif tipo == "servizi":
+                tipo_label = "Servizi"; destinatario = request.form.get("destinatario") or ""
+
+            html = render_template(
+                "Richiesta di intervento.html",
+                tipo_label=tipo_label, descrizione=descrizione, richiedente=richiedente,
+                centro=centro, fornitore=fornitore or None, destinatario=destinatario or None,
+                data_intervento=data_intervento, data_generazione=datetime.now().strftime("%d/%m/%Y %H:%M")
+            )
+
+            from xhtml2pdf import pisa
+            from io import BytesIO
+            pdf_io = BytesIO()
+            pisa.CreatePDF(src=html, dest=pdf_io)
+            pdf_io.seek(0)
+
+            # Salvataggio nel DB
+            try:
+                try:
+                    from datetime import datetime as _dt
+                    di = _dt.strptime(data_intervento, "%Y-%m-%d").date() if data_intervento else None
+                except Exception:
+                    di = None
+                rec = InterventoManutenzione(
+                    tipo=tipo, descrizione=descrizione, richiedente=richiedente, centro=centro,
+                    fornitore=fornitore or None, destinatario=destinatario or None,
+                    data_intervento=di, status="Non assegnato"
+                )
+                db.session.add(rec); db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Errore nel salvataggio della richiesta: {e}", "danger")
+
+            return send_file(pdf_io, as_attachment=True, download_name="Richiesta_intervento.pdf", mimetype="application/pdf")
+
+        # Salvataggio nuovo fornitore
         if request.method == "POST" and request.form.get("azione") == "salva_fornitore":
             nome_f = (request.form.get("nuovo_nome_fornitore") or "").strip()
             tel_f = (request.form.get("nuovo_telefono") or "").strip()
@@ -815,115 +813,18 @@ def create_app():
                 flash(f"Fornitore '{nome_f}' salvato.", "success")
             tipo_sel = tipologia_f
         else:
-            tipo_sel = (request.args.get("tipo") or request.form.get("tipo") or "").strip()
+            tipo_sel = request.args.get("tipo", "")
 
         fornitori = []
         if tipo_sel in ("elettrica", "meccanica"):
-            fornitori = [f.nome for f in (db.session.query(Fornitore)
-                             .join(FornitoreQualifica, FornitoreQualifica.fornitore_id == Fornitore.id)
-                             .filter(func.lower(Fornitore.tipologia) == tipo_sel)
-                             .distinct()
-                             .order_by(Fornitore.nome)
-                             .all())]
-
-        # -- genera PDF e opzionalmente invia mail --
-        if request.method == "POST":
-            azione = request.form.get("azione")
-
-            if azione in ("genera_pdf", "genera_e_invia"):
-                tipo = request.form.get("tipo") or ""
-                descrizione = request.form.get("descrizione") or ""
-                richiedente = request.form.get("richiedente") or ""
-                centro = request.form.get("centro") or ""
-                data_intervento = request.form.get("data_intervento") or ""
-                urgente = ('urgente' in request.form)
-                email_fornitore = (request.form.get("email_fornitore") or "").strip()
-
-                fornitore = None
-                email_fornitore_db = None
-                destinatario = None
-                tipo_label = ""
-                if tipo == "elettrica":
-                    sel = (request.form.get("fornitore") or "").strip()
-                    if sel:
-                        fobj = Fornitore.query.filter_by(nome=sel).first()
-                        if fobj and fobj.email:
-                            email_fornitore_db = fobj.email
-                    tipo_label = "Manutenzione elettrica"; fornitore = request.form.get("fornitore") or ""
-                elif tipo == "meccanica":
-                    sel = (request.form.get("fornitore") or "").strip()
-                    if sel:
-                        fobj = Fornitore.query.filter_by(nome=sel).first()
-                        if fobj and fobj.email:
-                            email_fornitore_db = fobj.email
-                    tipo_label = "Manutenzione meccanica"; fornitore = request.form.get("fornitore") or ""
-                elif tipo == "servizi":
-                    tipo_label = "Servizi"; destinatario = request.form.get("destinatario") or ""
-
-                html = render_template(
-                    "Richiesta di intervento.html",
-                    tipo_label=tipo_label, descrizione=descrizione, richiedente=richiedente,
-                    centro=centro, fornitore=fornitore or None, destinatario=destinatario or None,
-                    data_intervento=data_intervento,
-                    data_generazione=datetime.now().strftime("%d/%m/%Y %H:%M"),
-                    urgente=urgente
-                )
-
-                from xhtml2pdf import pisa
-                from io import BytesIO
-                os.makedirs(app.instance_path, exist_ok=True)
-                pdf_path = os.path.join(app.instance_path, "Richiesta_intervento.pdf")
-                pdf_io = BytesIO()
-                pisa.CreatePDF(src=html, dest=pdf_io)
-                with open(pdf_path, "wb") as f:
-                    f.write(pdf_io.getvalue())
-
-                # Salva record DB
-                try:
-                    try:
-                        from datetime import datetime as _dt
-                        di = _dt.strptime(data_intervento, "%Y-%m-%d").date() if data_intervento else None
-                    except Exception:
-                        di = None
-                    rec = InterventoManutenzione(
-                        tipo=tipo, descrizione=descrizione, richiedente=richiedente, centro=centro,
-                        fornitore=fornitore or None, destinatario=destinatario or None,
-                        data_intervento=di, status="Non assegnato", urgente=urgente
-                    )
-                    db.session.add(rec); db.session.commit()
-                except Exception as e:
-                    db.session.rollback()
-                    flash(f"Errore nel salvataggio della richiesta: {e}", "danger")
-
-                if azione == "genera_e_invia":
-                    to_list = []
-                    if email_fornitore:
-                        to_list.append(email_fornitore)
-                    _send_email(
-                        f"{'[URGENTE] ' if urgente else ''}Richiesta intervento manutenzione",
-                        "In allegato la richiesta di intervento.",
-                        (to_list or ([email_fornitore_db] if email_fornitore_db else [])),
-                        attachments=[pdf_path]
-                    )
-                    flash("PDF generato e email preparata/inviata.", "success")
-                    return redirect(url_for("elenco_manutenzioni"))
-                else:
-                    return send_file(
-                        pdf_path, as_attachment=True,
-                        download_name="Richiesta_intervento.pdf",
-                        mimetype="application/pdf"
-                    )
-
-            # POST non gestiti sopra: ricarica pagina
-            return redirect(url_for("richiedi_manutenzione"))
-
-        # GET
+            fornitori = [x.nome for x in Fornitore.query.filter_by(tipologia=tipo_sel).filter(Fornitore.qualifiche.any()).order_by(Fornitore.nome).all()]
         return render_template("manutenzione.html", fornitori=fornitori, tipo_sel=tipo_sel)
 
-    # Elenco interventi
+    # Elenco interventi (ENDPOINT RICHIESTO)
     @app.route("/manutenzione/elenco", methods=["GET"])
     @login_required
     def elenco_manutenzioni():
+        # compat con modelli senza created_at
         order_col = getattr(InterventoManutenzione, "created_at", None)
         q = InterventoManutenzione.query
         if order_col is not None:
@@ -952,125 +853,16 @@ def create_app():
             r.status = status
             db.session.commit()
             flash("Stato aggiornato.", "success")
+        # se la lista è in un blueprint, qualifica:
+        # return redirect(url_for("manutenzione.elenco"))
         return redirect(url_for("elenco_manutenzioni"))
 
-    @app.post("/manutenzione/<int:mid>/eseguito")
-    @login_required
-    def mark_manutenzione_eseguito(mid):
-        r = InterventoManutenzione.query.get_or_404(mid)
-        f = request.files.get("report")
-        if not f or f.filename == "":
-            flash("Allega il rapporto (PDF o JPEG) per segnare come eseguito.", "danger")
-            return redirect(url_for("elenco_manutenzioni"))
-        up_dir = os.path.join(os.path.dirname(__file__), "uploads", "manutenzioni")
-        os.makedirs(up_dir, exist_ok=True)
-        safe = secure_filename(f.filename)
-        path = os.path.join(up_dir, f"{mid}_{safe}")
-        f.save(path)
-        r.report_path = path
-        r.status = "Eseguito"
-        db.session.commit()
-        flash("Intervento segnato come eseguito con rapporto allegato.", "success")
-        return redirect(url_for("elenco_manutenzioni"))
-
-    
-    @app.post("/ncs/<int:nc_id>/upload_photo")
-    @login_required
-    def upload_nc_photo(nc_id):
-        from models import ChecklistPhoto, NonConformita as _NC
-        _ = _NC.query.get_or_404(nc_id)
-        f = request.files.get("photo")
-        if not f or f.filename == "":
-            flash("Seleziona una foto.", "warning")
-            return redirect(url_for("nc_detail", nc_id=nc_id))
-        up_dir = os.path.join(os.path.dirname(__file__), "uploads", "photos")
-        os.makedirs(up_dir, exist_ok=True)
-        safe = secure_filename(f.filename)
-        path = os.path.join(up_dir, f"nc{nc_id}_{safe}")
-        f.save(path)
-        ph = ChecklistPhoto(nc_id=nc_id, filename=path)
-        db.session.add(ph); db.session.commit()
-        flash("Foto caricata sulla NC.", "success")
-        return redirect(url_for("nc_detail", nc_id=nc_id))
-    @app.get("/manutenzione/<int:mid>/report")
-    @login_required
-    def download_manutenzione_report(mid):
-        r = InterventoManutenzione.query.get_or_404(mid)
-        if not r.report_path or not os.path.exists(r.report_path):
-            abort(404)
-        return send_file(r.report_path, as_attachment=True)
-
-    # ---- Foto audit & checklist ----
-    @app.post("/audit/<int:audit_id>/photo")
-    @login_required
-    def upload_audit_photo(audit_id):
-        from models import ChecklistPhoto, Audit as _Audit
-        _ = _Audit.query.get_or_404(audit_id)
-        f = request.files.get("photo")
-        if not f or f.filename == "":
-            flash("Seleziona una foto.", "warning")
-            return redirect(url_for("audit_detail", audit_id=audit_id))
-        up_dir = os.path.join(os.path.dirname(__file__), "uploads", "photos")
-        os.makedirs(up_dir, exist_ok=True)
-        safe = secure_filename(f.filename)
-        path = os.path.join(up_dir, f"a{audit_id}_{safe}")
-        f.save(path)
-        ph = ChecklistPhoto(audit_id=audit_id, filename=path)
-        db.session.add(ph); db.session.commit()
-        flash("Foto caricata.", "success")
-        return redirect(url_for("audit_detail", audit_id=audit_id))
-
-    @app.post("/checklist/<int:item_id>/photo")
-    @login_required
-    def upload_checklist_photo(item_id):
-        from models import ChecklistPhoto, ChecklistItem as _Item
-        it = _Item.query.get_or_404(item_id)
-        f = request.files.get("photo")
-        if not f or f.filename == "":
-            flash("Seleziona una foto.", "warning")
-            return redirect(url_for("audit_checklist", audit_id=it.audit_id))
-        up_dir = os.path.join(os.path.dirname(__file__), "uploads", "photos")
-        os.makedirs(up_dir, exist_ok=True)
-        safe = secure_filename(f.filename)
-        path = os.path.join(up_dir, f"i{item_id}_{safe}")
-        f.save(path)
-        ph = ChecklistPhoto(checklist_item_id=item_id, audit_id=it.audit_id, filename=path)
-        db.session.add(ph); db.session.commit()
-        flash("Foto caricata nella checklist.", "success")
-        return redirect(url_for("audit_checklist", audit_id=it.audit_id))
-
-    @app.get("/photo/<int:pid>")
-    @login_required
-    def get_photo(pid):
-        from models import ChecklistPhoto
-        ph = ChecklistPhoto.query.get_or_404(pid)
-        if not ph.filename or not os.path.exists(ph.filename):
-            abort(404)
-        return send_file(ph.filename, mimetype="image/jpeg")
-
-    # --- Cascade NC/Azioni ---
-    def close_nc_cascade(nc):
-        changed = False
-        for act in nc.azioni:
-            if act.stato != "Chiusa":
-                act.stato = "Chiusa"
-                changed = True
-        if changed:
-            db.session.commit()
-
-    def maybe_close_nc(nc):
-        if nc.stato != "Chiusa" and nc.azioni and all(a.stato == "Chiusa" for a in nc.azioni):
-            nc.stato = "Chiusa"
-            db.session.commit()
-
-    # Registrazione blueprint dentro la factory
+    # Registrazione blueprint QUI, dentro la factory
     app.register_blueprint(training_bp, url_prefix="/formazione")
     app.register_blueprint(suppliers_bp, url_prefix="/qualifica-fornitori")
 
     return app
 
-
-# Istanzia l'app
 app = create_app()
 
 if __name__ == '__main__':

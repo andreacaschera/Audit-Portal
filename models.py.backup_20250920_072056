@@ -31,7 +31,7 @@ class Audit(db.Model):
 class NonConformita(db.Model):
     __tablename__ = "non_conformita"
     id = db.Column(db.Integer, primary_key=True)
-    audit_id = db.Column(db.Integer, db.ForeignKey("audits.id"), nullable=True)
+    audit_id = db.Column(db.Integer, db.ForeignKey("audits.id"), nullable=False)
     codice = db.Column(db.String(50), nullable=False)
     descrizione = db.Column(db.Text, nullable=False)
     gravita = db.Column(db.String(20), nullable=False)  # Minore, Maggiore, Critica
@@ -97,8 +97,6 @@ class Fornitore(db.Model):
     tipologia = db.Column(db.String(50), nullable=False)  # "elettrica" | "meccanica" | "servizi"
     indirizzo = db.Column(db.String(300), nullable=True)
     citta = db.Column(db.String(120), nullable=True)
-    email = db.Column(db.String(200), nullable=True)
-
 
     def __repr__(self):
         return f"<Fornitore {self.nome} ({self.tipologia})>"
@@ -116,10 +114,6 @@ class InterventoManutenzione(db.Model):
     data_intervento = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(20), default="Non assegnato")  # "Eseguito" | "Assegnato" | "Non assegnato"
-    urgente = db.Column(db.Boolean, default=False)
-    richiesta_data = db.Column(db.Date, default=datetime.utcnow)
-    report_path = db.Column(db.String(500), nullable=True)
-
 
 
 
@@ -167,18 +161,3 @@ class FornitoreQualifica(db.Model):
     def final_score(self):
         sc = self.scores
         return round(sum(sc) / len(sc), 2) if sc else 0.0
-
-
-class ChecklistPhoto(db.Model):
-    __tablename__ = "checklist_photos"
-    id = db.Column(db.Integer, primary_key=True)
-    audit_id = db.Column(db.Integer, db.ForeignKey("audits.id"), nullable=True)
-    checklist_item_id = db.Column(db.Integer, db.ForeignKey("checklist_items.id"), nullable=True)
-    nc_id = db.Column(db.Integer, db.ForeignKey("non_conformita.id"), nullable=True)
-    filename = db.Column(db.String(512), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    audit = db.relationship("Audit", backref=db.backref("photos", cascade="all, delete-orphan"))
-    checklist_item = db.relationship("ChecklistItem", backref=db.backref("photos", cascade="all, delete-orphan"))
-    nc = db.relationship("NonConformita", backref=db.backref("photos", cascade="all, delete-orphan"))
-

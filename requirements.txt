@@ -1,6 +1,7 @@
 Flask==3.0.3
 Flask-WTF==1.2.1
 Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
 SQLAlchemy==2.0.31
 WTForms==3.1.2
 python-docx==1.1.2

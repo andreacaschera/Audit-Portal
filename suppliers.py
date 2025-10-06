@@ -1,6 +1,6 @@
-
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
+from sqlalchemy import func
 from models import db, Fornitore, FornitoreQualifica
 from forms import SupplierQualifyForm
 
@@ -14,34 +14,32 @@ def index():
 @suppliers_bp.route("/elenco")
 @login_required
 def elenco():
-    # Supplier is considered "qualificato" if has at least one qualifica; take the latest
-    data = []
+    # Elenco dei fornitori con almeno una qualifica (si mostra l'ultima)
+    items = []
     fornitori = Fornitore.query.order_by(Fornitore.nome.asc()).all()
     for f in fornitori:
         last_q = f.qualifiche.order_by(FornitoreQualifica.created_at.desc()).first()
         if last_q:
-            data.append({
-                "fornitore": f,
-                "qualifica": last_q,
-                "score": last_q.final_score
-            })
-    return render_template("fornitori_elenco.html", items=data)
+            items.append({"fornitore": f, "qualifica": last_q, "score": last_q.final_score})
+    return render_template("fornitori_elenco.html", items=items)
 
 @suppliers_bp.route("/nuovo", methods=["GET", "POST"])
 @login_required
 def nuovo():
     form = SupplierQualifyForm()
     if form.validate_on_submit():
-        # Create supplier
+        # Crea fornitore
         f = Fornitore(
-            nome=form.nome.data.strip(),
-            indirizzo=(form.indirizzo.data or "").strip(),
-            citta=(form.citta.data or "").strip(),
-            tipologia=form.tipologia.data.strip(),
-            contatto=(form.contatto.data or "").strip(),
+            nome=(form.nome.data or '').strip(),
+            indirizzo=(form.indirizzo.data or '').strip(),
+            citta=(form.citta.data or '').strip(),
+            tipologia=(form.tipologia.data or '').strip(),
+            contatto=(form.contatto.data or '').strip(),
+            email=(form.email.data or '').strip(),
         )
         db.session.add(f)
         db.session.flush()
+        # Prima qualifica
         q = FornitoreQualifica(
             fornitore_id=f.id,
             q1_req=form.q1_req.data, q1_imp=form.q1_imp.data,
@@ -54,7 +52,7 @@ def nuovo():
             q8_req=form.q8_req.data, q8_imp=form.q8_imp.data,
             q9_req=form.q9_req.data, q9_imp=form.q9_imp.data,
             q10_req=form.q10_req.data, q10_imp=form.q10_imp.data,
-            note=form.note.data
+            note=(form.note.data or '').strip(),
         )
         db.session.add(q)
         db.session.commit()
@@ -65,10 +63,11 @@ def nuovo():
 @suppliers_bp.route("/rivaluta")
 @login_required
 def rivaluta_list():
-    # List qualified suppliers (with at least one qualifica)
+    # Solo fornitori già qualificati
     fornitori = (
         Fornitore.query
         .join(FornitoreQualifica, Fornitore.id == FornitoreQualifica.fornitore_id)
+        .group_by(Fornitore.id)
         .order_by(Fornitore.nome.asc())
         .all()
     )
@@ -80,21 +79,19 @@ def rivaluta(fid):
     f = Fornitore.query.get_or_404(fid)
     last_q = f.qualifiche.order_by(FornitoreQualifica.created_at.desc()).first()
     form = SupplierQualifyForm(obj=f)
-    # Pre-fill from last qualification
+    # Precompila con l'ultima qualifica
     if request.method == "GET" and last_q:
         for i in range(1, 11):
-            setattr(form, f"q{i}_req", getattr(form, f"q{i}_req"))
             getattr(form, f"q{i}_req").data = getattr(last_q, f"q{i}_req")
             getattr(form, f"q{i}_imp").data = getattr(last_q, f"q{i}_imp")
         form.note.data = last_q.note or ""
     if form.validate_on_submit():
-        # update supplier base fields if changed
-        f.nome = form.nome.data.strip()
-        f.indirizzo = (form.indirizzo.data or "").strip()
-        f.citta = (form.citta.data or "").strip()
-        f.tipologia = form.tipologia.data.strip()
-        f.contatto = (form.contatto.data or "").strip()
-        # new qualification entry
+        f.nome = (form.nome.data or '').strip()
+        f.indirizzo = (form.indirizzo.data or '').strip()
+        f.citta = (form.citta.data or '').strip()
+        f.tipologia = (form.tipologia.data or '').strip()
+        f.contatto = (form.contatto.data or '').strip()
+        f.email = (form.email.data or '').strip()
         q = FornitoreQualifica(
             fornitore_id=f.id,
             q1_req=form.q1_req.data, q1_imp=form.q1_imp.data,
@@ -107,7 +104,7 @@ def rivaluta(fid):
             q8_req=form.q8_req.data, q8_imp=form.q8_imp.data,
             q9_req=form.q9_req.data, q9_imp=form.q9_imp.data,
             q10_req=form.q10_req.data, q10_imp=form.q10_imp.data,
-            note=form.note.data
+            note=(form.note.data or '').strip(),
         )
         db.session.add(q)
         db.session.commit()
@@ -119,10 +116,11 @@ def rivaluta(fid):
 @login_required
 def elimina(fid):
     f = Fornitore.query.get_or_404(fid)
-    # delete qualifications first due to FK
+    # elimina prima le qualifiche per vincoli FK
     for q in f.qualifiche.all():
         db.session.delete(q)
     db.session.delete(f)
     db.session.commit()
     flash("Fornitore eliminato.", "success")
     return redirect(url_for("suppliers.elenco"))
+

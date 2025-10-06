@@ -26,7 +26,6 @@ class Candidate(db.Model):
     enrollments = db.relationship("Enrollment", back_populates="candidate", cascade="all, delete-orphan")
 
 class Enrollment(db.Model):
-    # aggiunta tracciamento tempo
     __tablename__ = "enrollments"
     id = db.Column(db.Integer, primary_key=True)
     candidate_id = db.Column(db.Integer, db.ForeignKey("candidates.id"), nullable=False)
@@ -36,7 +35,6 @@ class Enrollment(db.Model):
     exam_passed = db.Column(db.Boolean, default=False)
     certificate_path = db.Column(db.String(512), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    time_spent_seconds = db.Column(db.Integer, default=0)
 
     candidate = db.relationship("Candidate", back_populates="enrollments")
     course = db.relationship("Course", back_populates="enrollments")
